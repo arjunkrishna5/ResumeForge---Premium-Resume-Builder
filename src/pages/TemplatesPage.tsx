@@ -93,7 +93,7 @@ export function TemplatesPage() {
     <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Header & Filter Bar */}
-      <div className="flex flex-col gap-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm z-10 sticky top-0 relative">
+      <div className="flex flex-col gap-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-8 z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold text-navy mb-1 tracking-tight">Template Gallery</h1>

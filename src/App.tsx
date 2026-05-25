@@ -12,6 +12,7 @@ import { BuilderPage } from "./pages/BuilderPage";
 import { TemplatesPage } from "./pages/TemplatesPage";
 import { ResumePreviewPage } from "./pages/ResumePreviewPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 export default function App() {
   return (
@@ -28,7 +29,7 @@ export default function App() {
           <Route path="/builder" element={<BuilderPage />} />
           <Route path="/builder/:id" element={<BuilderPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
-          <Route path="/settings" element={<div className="p-8 text-slate-500">Settings coming soon</div>} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         {/* Standalone Preview Route */}
