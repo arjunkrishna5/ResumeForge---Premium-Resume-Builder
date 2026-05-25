@@ -45,7 +45,7 @@ export function LandingPage() {
             </motion.p>
             
             <motion.div variants={item} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/builder">
+              <Link to="/dashboard">
                 <Button size="lg" className="w-full sm:w-auto h-14 group">
                   Get Started Free
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -212,7 +212,7 @@ export function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/builder">
+                <Link to="/dashboard">
                   <Button variant="outline" className="w-full text-lg h-12">Start Building</Button>
                 </Link>
              </div>
@@ -235,7 +235,7 @@ export function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/builder" className="relative z-10">
+                <Link to="/dashboard" className="relative z-10">
                   <Button className="w-full text-lg h-12 bg-white text-navy hover:bg-slate-100">Upgrade to Pro</Button>
                 </Link>
              </div>

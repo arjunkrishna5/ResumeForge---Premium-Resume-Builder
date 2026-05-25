@@ -37,7 +37,7 @@ export function BuilderPage() {
   const handlePrev = () => setCurrentStep(Math.max(0, currentStep - 1));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 flex-col md:flex-row">
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50 flex-col md:flex-row">
       {/* LEFT PANEL: Builder Form */}
       <div className="w-full md:w-1/2 lg:w-[45%] flex flex-col h-full border-r border-slate-200 bg-white shadow-[4px_0_24px_rgba(0,0,0,0.02)] relative z-10">
         
