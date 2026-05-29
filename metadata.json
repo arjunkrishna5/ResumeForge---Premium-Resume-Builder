@@ -1,0 +1,8 @@
+{
+  "name": "ResumeForge",
+  "description": "A premium resume/CV builder application featuring professional templates, a real-time split-pane editor, and AI writing assistance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
