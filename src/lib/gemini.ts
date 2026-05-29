@@ -1,32 +1,40 @@
+const BASE = '/api/gemini';
+
 export async function improveJobDescription(
   description: string
 ): Promise<string> {
-  const response = await fetch('/api/improveJobDescription', {
+  const res = await fetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ description })
+    body: JSON.stringify({ 
+      action: 'improveJobDescription', 
+      description 
+    })
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.error || 'Failed. Please try again.');
   }
-  const data = await response.json();
+  const data = await res.json();
   return data.text;
 }
 
 export async function suggestSkills(
   jobTitle: string
 ): Promise<string[]> {
-  const response = await fetch('/api/suggestSkills', {
+  const res = await fetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jobTitle })
+    body: JSON.stringify({ 
+      action: 'suggestSkills', 
+      jobTitle 
+    })
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.error || 'Failed. Please try again.');
   }
-  const data = await response.json();
+  const data = await res.json();
   return data.skills;
 }
 
@@ -36,20 +44,23 @@ export async function generateSummary(data: {
   experience: Array<{ title: string; company: string }>;
   skills: string[];
 }): Promise<string> {
-  const response = await fetch('/api/generateSummary', {
+  const res = await fetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify({ 
+      action: 'generateSummary',
+      ...data
+    })
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.error || 'Failed. Please try again.');
   }
-  const result = await response.json();
+  const result = await res.json();
   return result.text;
 }
 
-export async function generateCoverLetter(data: {
+export async function generateCoverLetter(params: {
   name: string;
   jobTitle: string;
   company: string;
@@ -57,15 +68,18 @@ export async function generateCoverLetter(data: {
   summary: string;
   skills: string[];
 }): Promise<string> {
-  const response = await fetch('/api/generateCoverLetter', {
+  const res = await fetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify({ 
+      action: 'generateCoverLetter',
+      ...params
+    })
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.error || 'Failed. Please try again.');
   }
-  const result = await response.json();
+  const result = await res.json();
   return result.text;
 }

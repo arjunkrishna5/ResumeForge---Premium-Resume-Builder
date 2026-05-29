@@ -1,26 +1,19 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "framework": null,
+  "rewrites": [
     {
-      "src": "server.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["dist/**"]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/server.ts"
+      "source": "/api/gemini",
+      "destination": "/api/gemini"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/server.ts"
+      "source": "/api/extractText", 
+      "destination": "/api/extractText"
     },
     {
-      "src": "/(.*)",
-      "dest": "/server.ts"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

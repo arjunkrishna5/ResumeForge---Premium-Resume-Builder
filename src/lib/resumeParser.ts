@@ -27,10 +27,10 @@ export async function parseResumeFile(file: File): Promise<any> {
     throw new Error('Could not extract any text from the file.');
   }
 
-  const response = await fetch('/api/parseResume', {
+  const response = await fetch('/api/gemini', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text })
+    body: JSON.stringify({ action: 'parseResume', text })
   });
   
   if (!response.ok) {
@@ -38,7 +38,8 @@ export async function parseResumeFile(file: File): Promise<any> {
      throw new Error(error.error || 'Failed to parse resume via AI');
   }
 
-  const parsedData = await response.json();
+  const jsonResponse = await response.json();
+  const parsedData = jsonResponse.data;
   
   // Ensure lists and required fields are somewhat initialized
   return {
