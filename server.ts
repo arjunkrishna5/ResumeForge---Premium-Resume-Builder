@@ -185,7 +185,25 @@ ${text}`
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    
+    // Serve static assets with correct MIME types
+    app.use(express.static(distPath, {
+      maxAge: '1y',
+      etag: false,
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js') || 
+            filePath.endsWith('.mjs')) {
+          res.setHeader('Content-Type', 
+            'application/javascript');
+        } else if (filePath.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css');
+        } else if (filePath.endsWith('.html')) {
+          res.setHeader('Content-Type', 'text/html');
+        }
+      }
+    }));
+    
+    // SPA catch-all — must be LAST
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
