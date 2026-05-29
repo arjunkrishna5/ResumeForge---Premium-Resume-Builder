@@ -36,8 +36,9 @@ export default async function handler(
       let text = '';
 
       if (file.mimetype === 'application/pdf') {
-        const PDFParse = (await import('pdf-parse')).default;
-        const data = await PDFParse(buffer);
+        const pdfModule = await import('pdf-parse');
+        const PDFParse = (pdfModule as any).default || pdfModule;
+        const data = await (PDFParse as any)(buffer);
         text = data.text;
       } else if (
         file.mimetype === 
