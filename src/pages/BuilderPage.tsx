@@ -36,6 +36,7 @@ export function BuilderPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialLoadRef = useRef(true);
+  const isFirstRender = useRef(true);
   
   // Read template from router state or default to "modern"
   const templateFromState = (location.state as any)?.templateId || "modern";
@@ -115,7 +116,9 @@ export function BuilderPage() {
       } catch (err) {
         console.error("Failed to load resume", err);
       } finally {
-        isInitialLoadRef.current = false;
+        setTimeout(() => {
+          isInitialLoadRef.current = false;
+        }, 50);
       }
     }
     loadData();
@@ -123,6 +126,10 @@ export function BuilderPage() {
 
   // Debounced Auto-save
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     if (isInitialLoadRef.current) return;
     if (!currentUser) return;
 
@@ -273,9 +280,9 @@ export function BuilderPage() {
                     <div className="ml-3 flex items-center relative group">
                       <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full mr-2 tracking-wider">OPTIONAL</span>
                       <Info className="h-4 w-4 text-slate-400 cursor-help" />
-                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-slate-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl pointer-events-none">
+                      <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 p-3 bg-slate-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[9999] shadow-xl pointer-events-none">
                         A cover letter is a short letter sent with your resume when applying for a job. It introduces you, explains why you want the role, and highlights why you're a great fit. A strong cover letter can significantly improve your chances of getting an interview.
-                        <div className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-slate-800"></div>
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full border-4 border-transparent border-b-slate-800"></div>
                       </div>
                     </div>
                   )}

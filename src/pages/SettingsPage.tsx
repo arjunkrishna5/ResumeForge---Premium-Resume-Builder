@@ -100,10 +100,7 @@ export function SettingsPage() {
       {/* Account Section */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
          <h2 className="text-lg font-bold text-navy flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /> Security</h2>
-         <p className="text-xs text-amber-600 mb-4 font-medium bg-amber-50 p-2 rounded border border-amber-100 flex items-center gap-2">
-            <Shield className="h-3.5 w-3.5 shrink-0" />
-            Email/Password login must be enabled in your Firebase console under Authentication → Sign-in methods.
-         </p>
+
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
              <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Current Password</label>

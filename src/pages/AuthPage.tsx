@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
-import { FileText, Mail, Lock, User, AlertCircle } from "lucide-react";
+import { FileText, Mail, Lock, User, AlertCircle, ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
 
 export default function AuthPage() {
@@ -60,6 +60,13 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      <Link 
+        to="/"
+        className="absolute top-6 left-6 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-navy transition-colors group z-20"
+      >
+        <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+        Back to home
+      </Link>
       {/* Background decoration */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/2 -right-1/4 w-[1000px] h-[1000px] rounded-full bg-primary/5 blur-3xl" />

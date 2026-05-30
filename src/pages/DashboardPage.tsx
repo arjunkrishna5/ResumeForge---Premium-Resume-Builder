@@ -6,6 +6,7 @@ import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import { getUserResumes, deleteResume, duplicateResume, ResumeDocument, getUserActivity, ActivityDocument } from "../lib/resumeService";
 import { ImportResumeModal } from "../components/ImportResumeModal";
+import { TemplatePickerModal } from "../components/TemplatePickerModal";
 
 
 // Dummy resume HTML renders
@@ -32,6 +33,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [activities, setActivities] = useState<ActivityDocument[]>([]);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   
   const [showWelcome, setShowWelcome] = useState(location.state?.newUser || false);
 
@@ -123,7 +125,7 @@ export function DashboardPage() {
            <Button onClick={() => setIsImportModalOpen(true)} variant="outline" className="gap-2 bg-white text-slate-700 shadow-sm border-slate-200">
              <Import className="h-4 w-4" /> Import Resume
            </Button>
-           <Button onClick={() => navigate('/builder')} className="gap-2">
+           <Button onClick={() => setShowTemplatePicker(true)} className="gap-2">
              <Plus className="h-4 w-4" /> Create New Resume
            </Button>
         </motion.div>
@@ -159,13 +161,13 @@ export function DashboardPage() {
             {/* Resume Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Create New Card */}
-              <Link to="/builder" className="group flex flex-col justify-center items-center h-[340px] rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-indigo-50/50 hover:border-primary transition-all duration-200 p-6 text-center shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-1">
+              <div onClick={() => setShowTemplatePicker(true)} className="group flex flex-col justify-center items-center h-[340px] rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-indigo-50/50 hover:border-primary transition-all duration-200 p-6 text-center shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-1">
                 <div className="h-14 w-14 rounded-full bg-white flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-primary group-hover:text-white text-primary shadow-sm transition-all duration-300 border border-slate-200 group-hover:border-primary">
                   <Plus className="h-6 w-6" />
                 </div>
                 <h3 className="font-bold text-navy text-lg leading-tight">Create New Resume</h3>
                 <p className="text-sm text-slate-500 mt-2 font-medium">Start from scratch or jump right in</p>
-              </Link>
+              </div>
               
               {loading ? (
                 <>
@@ -190,7 +192,7 @@ export function DashboardPage() {
                    <FileText className="h-12 w-12 text-slate-300 mb-4" />
                    <h3 className="text-lg font-bold text-navy mb-1">No resumes yet</h3>
                    <p className="mb-4 text-sm font-medium max-w-sm">Create your first resume to start applying for your next dream job.</p>
-                   <Button onClick={() => navigate('/builder')}>Create Resume</Button>
+                   <Button onClick={() => setShowTemplatePicker(true)}>Create Resume</Button>
                 </div>
               ) : (
                  <>
@@ -353,6 +355,7 @@ export function DashboardPage() {
          </div>
       </div>
       <ImportResumeModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />
+      <TemplatePickerModal isOpen={showTemplatePicker} onClose={() => setShowTemplatePicker(false)} />
     </div>
   );
 }

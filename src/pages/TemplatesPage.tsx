@@ -3,66 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, Sparkles, Filter, ChevronDown, Check, X, Heart } from "lucide-react";
 import { Button } from "../components/ui/Button";
-
-// Dummy resume HTML renders matching Dashboard
-const TemplateRenders = {
-  modern: () => (
-    <div className="w-full h-full bg-white border border-slate-200 flex flex-col p-3 text-[4px] leading-tight overflow-hidden pointer-events-none">
-      <div className="border-b border-navy pb-1 mb-1.5 text-center">
-        <div className="font-bold text-[6px] text-navy uppercase tracking-wider">Name Surname</div>
-        <div className="text-primary font-semibold mt-0.5 tracking-widest uppercase">Professional Title</div>
-        <div className="flex justify-center gap-1 text-[3px] text-slate-500 mt-1 uppercase">info@email.com • Location</div>
-      </div>
-      <div className="mb-1.5"><div className="text-slate-700 text-justify">Professional summary goes here. Describes key achievements.</div></div>
-      <div className="flex-1">
-        <div className="font-bold uppercase border-b border-slate-200 mb-1 text-slate-800">Experience</div>
-        <div className="mb-1">
-          <div className="flex justify-between"><span className="font-bold">Company</span><span className="text-slate-500 text-[3px]">Date</span></div>
-          <div className="text-primary">Role</div>
-          <div className="h-[2px] w-[80%] bg-slate-200 mt-0.5"></div>
-          <div className="h-[2px] w-[60%] bg-slate-200 mt-0.5"></div>
-        </div>
-      </div>
-    </div>
-  ),
-  minimal: () => (
-    <div className="w-full h-full bg-[#FAFAFA] border border-slate-200 flex flex-col p-3 text-[4px] leading-tight overflow-hidden pointer-events-none">
-      <div className="mb-2"><div className="font-light text-[6px] text-slate-800 tracking-tight">NAME SURNAME</div><div className="text-[3px] text-slate-500 mt-0.5">Title • Email • Phone</div></div>
-      <div className="grid grid-cols-[1fr_2fr] gap-2 flex-1">
-        <div><div className="font-medium text-slate-800 mb-1">SKILLS</div><div className="h-[2px] w-full bg-slate-200 mb-0.5"></div><div className="h-[2px] w-[80%] bg-slate-200 mb-0.5"></div></div>
-        <div>
-          <div className="font-medium text-slate-800 mb-1">EXPERIENCE</div>
-          <div className="mb-1.5"><div className="font-medium">Role</div><div className="text-[3px] text-slate-500">Company • Date</div><div className="h-[2px] w-full bg-slate-200 mt-0.5"></div></div>
-        </div>
-      </div>
-    </div>
-  ),
-  creative: () => (
-    <div className="w-full h-full bg-slate-900 border border-slate-800 flex text-[4px] leading-tight overflow-hidden text-slate-300 pointer-events-none">
-      <div className="w-[30%] bg-indigo-600 p-2"><div className="w-4 h-4 rounded-full bg-indigo-400 mb-2"></div><div className="font-bold text-[4px] text-white uppercase mb-2">NAME</div><div className="h-[2px] w-full bg-indigo-400 mb-0.5"></div></div>
-      <div className="w-[70%] p-2 flex flex-col"><div className="mb-2"><div className="font-bold text-white uppercase border-b border-slate-700 pb-[1px] mb-1">Profile</div><div className="h-[2px] w-full bg-slate-700"></div></div><div className="flex-1"><div className="font-bold text-white uppercase border-b border-slate-700 pb-[1px] mb-1">Work</div><div className="font-bold text-indigo-400">Company</div></div></div>
-    </div>
-  ),
-  executive: () => (
-    <div className="w-full h-full bg-white border-t-[6px] border-navy flex flex-col p-3 text-[4px] leading-tight overflow-hidden pointer-events-none shadow-inner">
-      <div className="flex justify-between items-end border-b-2 border-slate-300 pb-1 mb-2">
-         <div className="font-serif text-[7px] text-slate-900 font-bold">Name Surname</div>
-         <div className="text-[3px] text-slate-500 text-right">Email<br/>Phone</div>
-      </div>
-      <div className="font-serif font-bold text-slate-800 border-b border-slate-200 mb-1">EXECUTIVE SUMMARY</div>
-      <div className="h-[2px] w-full bg-slate-200 mb-0.5"></div><div className="h-[2px] w-[90%] bg-slate-200 mb-2"></div>
-      <div className="font-serif font-bold text-slate-800 border-b border-slate-200 mb-1">PROFESSIONAL EXPERIENCE</div>
-      <div><div className="font-bold">Corp Inc</div><div className="h-[2px] w-full bg-slate-200 mt-1"></div></div>
-    </div>
-  )
-};
+import { TemplateRenders } from "../components/TemplateRenders";
+import { templates } from "../data/templates";
 
 export function TemplatesPage() {
   const navigate = useNavigate();
   const categories = ["All", "ATS-Friendly", "Creative", "Minimal", "Modern", "Executive"];
   const [activeCategory, setActiveCategory] = useState("All");
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
-  
+
   // Body scroll lock on modal open
   useEffect(() => {
     if (previewTemplate) document.body.style.overflow = 'hidden';
@@ -76,18 +25,6 @@ export function TemplatesPage() {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
-
-  const templates = [
-    { id: 1, name: "Nexus", type: "Modern", score: "96%", renderType: "modern", features: ["1-column layout", "Photo optional", "High readability"] },
-    { id: 2, name: "Atlas", type: "Executive", score: "99%", renderType: "executive", features: ["Traditional format", "Space optimized", "ATS ideal"] },
-    { id: 3, name: "Meridian", type: "Minimal", score: "98%", renderType: "minimal", features: ["Clean typography", "Focus on content", "2-column option"] },
-    { id: 4, name: "Apex", type: "Creative", score: "85%", renderType: "creative", features: ["Dark mode base", "Avatar support", "Skill bars"] },
-    { id: 5, name: "Nova", type: "Modern", score: "94%", renderType: "modern", features: ["Timeline bullets", "Accent colors", "Modern serif"] },
-    { id: 6, name: "Slate", type: "Creative", score: "88%", renderType: "creative", features: ["Sidebar block", "Icon support", "Visual headers"] },
-    { id: 7, name: "Prism", type: "Minimal", score: "97%", renderType: "minimal", features: ["Ultra clean", "Large headings", "Subtle borders"] },
-    { id: 8, name: "Vertex", type: "Executive", score: "99%", renderType: "executive", features: ["C-Level focused", "Dense data presentation", "Classic Serif"] },
-    { id: 9, name: "Core", type: "Modern", score: "95%", renderType: "modern", features: ["Versatile use", "Clear hierarchy", "San-serif body"] },
-  ];
 
   const filtered = activeCategory === "All" ? templates : templates.filter(t => t.type === activeCategory || (activeCategory === "ATS-Friendly" && parseInt(t.score) > 94));
 

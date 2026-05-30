@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, FileText, Settings, LogOut, Plus, Sparkles, User, Search, Home, Edit3, Bell, Menu, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -7,6 +7,7 @@ import { AuthContext } from "../../contexts/AuthContext";
 
 export function DashboardLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentUser, signOut } = useContext(AuthContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -183,7 +184,15 @@ export function DashboardLayout() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input 
                   type="text" 
-                  placeholder="Search..." 
+                  placeholder="Search templates..." 
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const query = e.currentTarget.value;
+                      if (query) {
+                        navigate(`/templates?q=${encodeURIComponent(query)}`);
+                      }
+                    }
+                  }}
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm focus:border-primary focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-primary/10 transition-colors"
                 />
              </div>
@@ -195,7 +204,7 @@ export function DashboardLayout() {
 
              <div className="h-6 w-px bg-slate-200 mx-1"></div>
 
-             <div className="flex items-center gap-3 group cursor-pointer p-1 rounded-full hover:bg-slate-50 transition-colors">
+             <div onClick={() => navigate('/settings')} className="flex items-center gap-3 group cursor-pointer p-1 rounded-full hover:bg-slate-50 transition-colors">
                <div className="hidden md:flex flex-col items-end">
                  <span className="text-sm font-semibold text-slate-700 leading-tight truncate max-w-[120px]">{displayName}</span>
                </div>
