@@ -1,8 +1,8 @@
 import { User, Shield, Bell, Trash2, Camera, Upload, CheckCircle2 } from "lucide-react";
 import { Button } from "../components/ui/Button";
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../contexts/AuthContext";
-import { updateProfile } from "firebase/auth";
+import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 
 export function SettingsPage() {
   const { currentUser } = useContext(AuthContext);
@@ -12,6 +12,67 @@ export function SettingsPage() {
   
   const [profileSaved, setProfileSaved] = useState(false);
   const [toggles, setToggles] = useState([true, false, true]);
+
+  // Avatar upload
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+    
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please select an image file.');
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      setErrorMsg('Image must be under 1MB.');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const dataUrl = reader.result as string;
+        await updateProfile(currentUser, { 
+          photoURL: dataUrl 
+        });
+        setSuccessMsg('Profile photo updated!');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } catch (err) {
+        setErrorMsg('Failed to update photo.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Password state
+  const isGoogleUser = currentUser?.providerData?.some(p => p.providerId === 'google.com');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [pwdError, setPwdError] = useState("");
+  const [pwdSuccess, setPwdSuccess] = useState("");
+  const [isUpdatingPwd, setIsUpdatingPwd] = useState(false);
+
+  const handleUpdatePassword = async () => {
+    if (!currentUser || !currentPassword || !newPassword) return;
+    setIsUpdatingPwd(true);
+    setPwdError("");
+    setPwdSuccess("");
+    try {
+      const credential = EmailAuthProvider.credential(currentUser.email!, currentPassword);
+      await reauthenticateWithCredential(currentUser, credential);
+      await updatePassword(currentUser, newPassword);
+      setPwdSuccess("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+    } catch (err: any) {
+      setPwdError(err.message || "Failed to update password");
+    } finally {
+      setIsUpdatingPwd(false);
+    }
+  };
 
   useEffect(() => {
     if (currentUser) {
@@ -62,13 +123,20 @@ export function SettingsPage() {
          <h2 className="text-lg font-bold text-navy mb-4 flex items-center gap-2"><User className="h-5 w-5 text-primary" /> Profile</h2>
          <div className="flex flex-col md:flex-row gap-8">
             <div className="flex flex-col items-center gap-3">
-               <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center border-2 border-dashed border-slate-300 text-primary relative overflow-hidden group">
-                  <span className="text-3xl font-bold font-display">{initial}</span>
-                  <div className="absolute inset-0 bg-navy/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+               <input type="file" ref={fileInputRef} accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+               <div onClick={() => fileInputRef.current?.click()} className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center border-2 border-dashed border-slate-300 text-primary relative overflow-hidden group cursor-pointer">
+                  {currentUser?.photoURL ? (
+                    <img src={currentUser.photoURL} alt="Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-3xl font-bold font-display">{initial}</span>
+                  )}
+                  <div className="absolute inset-0 bg-navy/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                      <Camera className="h-6 w-6 text-white" />
                   </div>
                </div>
-               <Button variant="outline" size="sm" className="bg-white border-slate-200 shadow-sm text-xs font-semibold px-4"><Upload className="h-3 w-3 mr-2" /> Upload Avatar</Button>
+               <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm" className="bg-white border-slate-200 shadow-sm text-xs font-semibold px-4"><Upload className="h-3 w-3 mr-2" /> Upload Avatar</Button>
+               {errorMsg && <p className="text-xs text-red-500">{errorMsg}</p>}
+               {successMsg && <p className="text-xs text-emerald-500">{successMsg}</p>}
             </div>
             <div className="flex-1 space-y-4">
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -101,17 +169,32 @@ export function SettingsPage() {
       <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
          <h2 className="text-lg font-bold text-navy flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /> Security</h2>
 
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-             <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Current Password</label>
-                <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 transition-colors text-sm" />
+         {isGoogleUser ? (
+           <div className="my-6">
+             <p className="text-sm text-slate-500 mb-4">You signed in with Google. Password management is handled through your Google account.</p>
+             <a href="https://myaccount.google.com/security" target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold bg-white border border-slate-200 shadow-sm text-slate-700 hover:bg-slate-50">Manage Google Account →</a>
+           </div>
+         ) : (
+           <>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+                 <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Current Password</label>
+                    <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 transition-colors text-sm" />
+                 </div>
+                 <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">New Password</label>
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 transition-colors text-sm" />
+                 </div>
              </div>
-             <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">New Password</label>
-                <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 transition-colors text-sm" />
+             <div className="flex items-center gap-4 mb-8">
+               <Button onClick={handleUpdatePassword} disabled={isUpdatingPwd || !currentPassword || !newPassword} variant="outline" className="bg-white border-slate-200 shadow-sm text-slate-700">
+                 {isUpdatingPwd ? "Updating..." : "Update Password"}
+               </Button>
+               {pwdError && <span className="text-xs text-red-500">{pwdError}</span>}
+               {pwdSuccess && <span className="text-xs text-emerald-500">{pwdSuccess}</span>}
              </div>
-         </div>
-         <Button variant="outline" className="mb-8 bg-white border-slate-200 shadow-sm text-slate-700">Update Password</Button>
+           </>
+         )}
 
          <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
              <div>

@@ -34,8 +34,19 @@ export async function parseResumeFile(file: File): Promise<any> {
   });
   
   if (!response.ok) {
-     const error = await response.json();
-     throw new Error(error.error || 'Failed to parse resume via AI');
+     let errMessage = 'Failed to parse resume via AI';
+     if (response.status === 401 || response.status === 403) {
+       errMessage = 'AI service configuration error. Please try again later.';
+     } else if (response.status === 429) {
+       const error = await response.json().catch(() => ({}));
+       errMessage = error.error || 'AI rate limit exceeded. Please wait and try again.';
+     } else if (response.status === 500) {
+       errMessage = 'AI service temporarily unavailable.';
+     } else {
+       const error = await response.json().catch(() => ({}));
+       if (error.error) errMessage = error.error;
+     }
+     throw new Error(errMessage);
   }
 
   const jsonResponse = await response.json();

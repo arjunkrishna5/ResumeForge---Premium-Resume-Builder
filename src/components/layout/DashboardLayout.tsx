@@ -55,7 +55,7 @@ export function DashboardLayout() {
               className="fixed inset-y-0 left-0 z-50 w-[240px] flex-col border-r border-slate-200 bg-white flex md:hidden shadow-2xl"
             >
               <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-slate-200">
-                <Link to="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-2 group cursor-pointer">
+                <Link to="/dashboard" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-2 group cursor-pointer">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-navy text-white">
                     <Sparkles className="h-3.5 w-3.5" />
                   </div>
@@ -114,7 +114,7 @@ export function DashboardLayout() {
       {/* Sidebar - Fixed 240px */}
       <aside className="hidden w-[240px] flex-col border-r border-slate-200 bg-white md:flex flex-shrink-0 z-20">
         <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-200">
-          <Link to="/" className="flex items-center gap-2 group cursor-pointer">
+          <Link to="/dashboard" className="flex items-center gap-2 group cursor-pointer">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-navy text-white transition-transform group-hover:scale-105 group-hover:rotate-3">
               <Sparkles className="h-3.5 w-3.5" />
             </div>

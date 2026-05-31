@@ -1,5 +1,24 @@
 const BASE = '/api/gemini';
 
+async function handleResponse(res: Response) {
+  if (!res.ok) {
+    let errMessage = 'Failed. Please try again.';
+    if (res.status === 401 || res.status === 403) {
+      errMessage = 'AI service configuration error. Please try again later.';
+    } else if (res.status === 429) {
+      const err = await res.json().catch(() => ({}));
+      errMessage = err.error || 'AI rate limit exceeded. Please wait and try again.';
+    } else if (res.status === 500) {
+      errMessage = 'AI service temporarily unavailable.';
+    } else {
+      const err = await res.json().catch(() => ({}));
+      if (err.error) errMessage = err.error;
+    }
+    throw new Error(errMessage);
+  }
+  return res.json();
+}
+
 export async function improveJobDescription(
   description: string
 ): Promise<string> {
@@ -11,11 +30,7 @@ export async function improveJobDescription(
       description 
     })
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed. Please try again.');
-  }
-  const data = await res.json();
+  const data = await handleResponse(res);
   return data.text;
 }
 
@@ -30,11 +45,7 @@ export async function suggestSkills(
       jobTitle 
     })
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed. Please try again.');
-  }
-  const data = await res.json();
+  const data = await handleResponse(res);
   return data.skills;
 }
 
@@ -52,11 +63,7 @@ export async function generateSummary(data: {
       ...data
     })
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed. Please try again.');
-  }
-  const result = await res.json();
+  const result = await handleResponse(res);
   return result.text;
 }
 
@@ -76,10 +83,6 @@ export async function generateCoverLetter(params: {
       ...params
     })
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed. Please try again.');
-  }
-  const result = await res.json();
+  const result = await handleResponse(res);
   return result.text;
 }

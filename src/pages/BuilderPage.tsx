@@ -69,21 +69,27 @@ export function BuilderPage() {
     return () => observer.disconnect();
   }, [mobilePreviewOpen]); // re-run if modal opens
 
-  // Date Mask
-  const handleDateInput = (value: string, setter: (val: string) => void) => {
-    // allow MM/YYYY or just letters like "Present"
-    if (/^[A-Za-z]+$/.test(value)) {
-      setter(value);
-      return;
+  // Date mask function: forces MM/YYYY format
+  const maskDate = (value: string): string => {
+    // Remove everything that's not a digit
+    const digits = value.replace(/\D/g, '');
+    
+    if (digits.length <= 2) {
+      return digits;
     }
-    const clean = value.replace(/\D/g, "");
-    if (clean.length > 6) return;
-    let format = clean;
-    if (clean.length >= 3) {
-      const parts = [clean.slice(0, 2), clean.slice(2)];
-      format = parts.join("/");
-    }
-    setter(format);
+    
+    // Clamp month to 01-12
+    let month = digits.slice(0, 2);
+    const monthNum = parseInt(month);
+    if (monthNum > 12) month = '12';
+    if (monthNum === 0) month = '01';
+    
+    const year = digits.slice(2, 6);
+    return `${month}/${year}`;
+  };
+
+  const maskYear = (value: string): string => {
+    return value.replace(/\D/g, '').slice(0, 4);
   };
 
   // Load existing resume or handle imported Data
@@ -155,6 +161,8 @@ export function BuilderPage() {
     };
   }, [formData, selectedTemplate, currentUser, currentResumeId]);
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const manuallySaveAndFinish = async () => {
     if (!currentUser) return;
     try {
@@ -164,6 +172,23 @@ export function BuilderPage() {
     } catch (e) {
       console.error(e);
       showError("Failed to save and finish.");
+    }
+  };
+
+  const handleSkipToDownload = async () => {
+    if (!currentUser) return;
+    setIsSaving(true);
+    try {
+      const id = await saveResume(
+        currentUser.uid, 
+        currentResumeId || null, 
+        formData
+      );
+      navigate(`/preview/${id}`);
+    } catch (err) {
+      console.error('Save failed:', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -358,11 +383,11 @@ export function BuilderPage() {
                           </div>
                           <div>
                             <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Start Date</label>
-                            <input type="text" placeholder="MM/YYYY" value={expForm.startDate} onChange={e => handleDateInput(e.target.value, val => setExpForm(p => ({...p, startDate: val})))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm" />
+                            <input type="text" placeholder="MM/YYYY" maxLength={7} value={expForm.startDate} onChange={e => setExpForm(p => ({...p, startDate: maskDate(e.target.value)}))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm" />
                           </div>
                           <div>
                              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">End Date</label>
-                             <input type="text" placeholder="MM/YYYY" value={expForm.endDate} disabled={expForm.current} onChange={e => handleDateInput(e.target.value, val => setExpForm(p => ({...p, endDate: val})))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm disabled:opacity-50 disabled:bg-slate-100" />
+                             <input type="text" placeholder="MM/YYYY" maxLength={7} value={expForm.endDate} disabled={expForm.current} onChange={e => setExpForm(p => ({...p, endDate: maskDate(e.target.value)}))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm disabled:opacity-50 disabled:bg-slate-100" />
                           </div>
                        </div>
                        <div className="flex items-center gap-2 mt-2">
@@ -429,11 +454,11 @@ export function BuilderPage() {
                           </div>
                           <div>
                             <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Start Year</label>
-                            <input type="text" placeholder="MM/YYYY" value={eduForm.startYear} onChange={e => handleDateInput(e.target.value, val => setEduForm(p => ({...p, startYear: val})))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm" />
+                            <input type="text" placeholder="YYYY" maxLength={4} value={eduForm.startYear} onChange={e => setEduForm(p => ({...p, startYear: maskYear(e.target.value)}))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm" />
                           </div>
                           <div>
                             <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">End Year</label>
-                            <input type="text" placeholder="MM/YYYY" value={eduForm.endYear} onChange={e => handleDateInput(e.target.value, val => setEduForm(p => ({...p, endYear: val})))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm" />
+                            <input type="text" placeholder="YYYY" maxLength={4} value={eduForm.endYear} onChange={e => setEduForm(p => ({...p, endYear: maskYear(e.target.value)}))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm" />
                           </div>
                           <div className="sm:col-span-2">
                             <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Grade / GPA (Optional)</label>
@@ -669,8 +694,8 @@ export function BuilderPage() {
           
           {currentStep === 5 ? (
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={manuallySaveAndFinish} className="px-6 font-bold text-primary border-primary hover:bg-primary/5" disabled={saveStatus === "saving"}>
-                Skip to Download
+              <Button variant="outline" onClick={handleSkipToDownload} className="px-6 font-bold text-primary border-primary hover:bg-primary/5" disabled={isSaving}>
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Skip to Download
               </Button>
               <Button onClick={() => setCurrentStep(p => p + 1)} className="px-6 font-bold shadow-[0_4px_12px_rgba(99,102,241,0.2)]">
                 Add Cover Letter <ChevronRight className="h-4 w-4 ml-2" />

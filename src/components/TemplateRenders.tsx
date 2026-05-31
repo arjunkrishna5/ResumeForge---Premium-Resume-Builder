@@ -146,23 +146,23 @@ export const TemplateRenders = {
   claude: () => (
     <div className="w-full h-full bg-white border border-slate-200 flex flex-col p-3 text-[4px] leading-tight overflow-hidden pointer-events-none">
       <div className="mb-1">
-        <div className="font-bold text-[6.5px] tracking-tight text-slate-900">Name Surname</div>
-        <div className="font-medium text-[3.5px] text-indigo-500 uppercase tracking-widest mt-0.5">Professional Title</div>
+        <div className="font-[800] text-[6.5px] tracking-tight text-[#0F172A] mb-0.5">Name Surname</div>
+        <div className="font-[600] text-[3.5px] text-[#6366F1] uppercase tracking-[0.18em]">Professional Title</div>
       </div>
-      <div className="h-[0.5px] w-full bg-slate-800 mb-0.5"></div>
-      <div className="text-[3px] text-slate-600 mb-1.5">info@email.com | Location | LinkedIn</div>
+      <div className="h-[0.5px] w-full bg-[#0F172A] my-1"></div>
+      <div className="text-[3px] text-[#475569] font-[500] mb-1.5 flex gap-1">info@email.com | Location | LinkedIn</div>
       
       <div className="mb-1.5">
-        <div className="font-bold text-[3px] uppercase tracking-widest border-b-[0.5px] border-slate-300 pb-[1px] mb-1">Experience</div>
-        <div className="flex justify-between items-baseline"><span className="font-semibold text-slate-900">Role</span><span className="text-[3px] text-slate-500">Date</span></div>
-        <div className="font-medium text-[3px] text-indigo-500 mb-0.5">Company</div>
+        <div className="font-[700] text-[3px] uppercase tracking-[0.15em] text-[#0F172A] border-b-[0.5px] border-[#CBD5E1] pb-[1px] mb-1">Experience</div>
+        <div className="flex justify-between items-baseline"><span className="font-[600] text-[#0F172A]">Role</span><span className="text-[2.5px] text-[#64748B]">Date</span></div>
+        <div className="font-[500] text-[3px] text-[#6366F1] mb-0.5">Company</div>
         <div className="h-[1.5px] w-[90%] bg-slate-200 mt-0.5"></div>
         <div className="h-[1.5px] w-[80%] bg-slate-200 mt-0.5"></div>
       </div>
       
       <div>
-        <div className="font-bold text-[3px] uppercase tracking-widest border-b-[0.5px] border-slate-300 pb-[1px] mb-1">Skills</div>
-        <div className="text-[3px]"><span className="font-semibold">Technical:</span> React, TypeScript</div>
+        <div className="font-[700] text-[3px] uppercase tracking-[0.15em] text-[#0F172A] border-b-[0.5px] border-[#CBD5E1] pb-[1px] mb-1">Skills</div>
+        <div className="text-[2.5px] text-[#374151]">Technical: React, TypeScript</div>
       </div>
     </div>
   )

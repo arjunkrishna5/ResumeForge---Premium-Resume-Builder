@@ -7,11 +7,12 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
         <header className="mb-8 border-b border-slate-300 pb-6">
           <h1 className="text-4xl font-light tracking-tight">{data.name || 'YOUR NAME'}</h1>
           <h2 className="text-xl font-medium text-slate-500 mt-1">{data.role || 'YOUR ROLE'}</h2>
-          <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-3">
             {data.email && <span>{data.email}</span>}
-            {data.phone && <span>{data.phone}</span>}
-            {data.location && <span>{data.location}</span>}
-            {data.linkedin && <span>{data.linkedin}</span>}
+            {data.phone && <span>| {data.phone}</span>}
+            {data.location && <span>| {data.location}</span>}
+            {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
           </div>
         </header>
 
@@ -90,10 +91,12 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
         <header className="mb-6 text-center border-b-[3px] border-double border-black pb-4">
           <h1 className="text-3xl font-bold uppercase tracking-wide">{data.name || 'YOUR NAME'}</h1>
           <h2 className="text-lg italic mt-1">{data.role || 'Your Role'}</h2>
-          <div className="flex flex-wrap justify-center gap-3 mt-2 text-[11px]">
+          <div className="flex flex-wrap justify-center items-center gap-2 text-xs mt-2">
             {data.email && <span>{data.email}</span>}
             {data.phone && <span>| {data.phone}</span>}
             {data.location && <span>| {data.location}</span>}
+            {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
           </div>
         </header>
 
@@ -177,6 +180,7 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
                {data.phone && <div>{data.phone}</div>}
                {data.location && <div>{data.location}</div>}
                {data.linkedin && <div className="break-words">{data.linkedin}</div>}
+               {data.portfolio && <div className="break-words">{data.portfolio}</div>}
             </div>
 
             {(data.technicalSkills.length > 0 || data.softSkills.length > 0) && (
@@ -257,11 +261,12 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
         <header className="mb-6 pb-4 border-b-2 border-slate-900">
           <h1 className="text-4xl font-black tracking-tight text-slate-900 uppercase">{data.name || 'YOUR NAME'}</h1>
           <h2 className="text-lg font-medium text-slate-500 mt-1 uppercase tracking-widest">{data.role || 'YOUR ROLE'}</h2>
-          <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500 font-medium">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-medium mt-3">
             {data.email && <span>{data.email}</span>}
-            {data.phone && <span className="uppercase tracking-wider">• {data.phone}</span>}
-            {data.location && <span className="uppercase tracking-wider">• {data.location}</span>}
-            {data.linkedin && <span>• {data.linkedin}</span>}
+            {data.phone && <span>| {data.phone}</span>}
+            {data.location && <span>| {data.location}</span>}
+            {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
           </div>
         </header>
 
@@ -347,10 +352,12 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
         <header className="mb-6 pl-4 border-l-2 border-indigo-200">
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">{data.name || 'YOUR NAME'}</h1>
           <h2 className="text-lg font-medium text-slate-600 mt-1">{data.role || 'YOUR ROLE'}</h2>
-          <div className="flex flex-wrap gap-3 mt-3 text-[13px] text-slate-500 font-sans">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-sans mt-3">
             {data.email && <span>{data.email}</span>}
-            {data.phone && <span>• {data.phone}</span>}
-            {data.location && <span>• {data.location}</span>}
+            {data.phone && <span>| {data.phone}</span>}
+            {data.location && <span>| {data.location}</span>}
+            {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
           </div>
         </header>
 
@@ -418,10 +425,12 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
             <h1 className="text-2xl font-bold inline-block mr-3">{data.name || 'YOUR NAME'}</h1>
             <h2 className="text-[13px] text-slate-600 inline-block font-medium border-l border-slate-300 pl-3">{data.role || 'YOUR ROLE'}</h2>
           </div>
-          <div className="text-[11px] text-slate-500 flex gap-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
             {data.email && <span>{data.email}</span>}
-            {data.phone && <span>• {data.phone}</span>}
-            {data.location && <span>• {data.location}</span>}
+            {data.phone && <span>| {data.phone}</span>}
+            {data.location && <span>| {data.location}</span>}
+            {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
           </div>
         </header>
 
@@ -485,11 +494,12 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
         <header className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white p-[15mm] text-center shadow-md">
           <h1 className="text-4xl font-bold tracking-tight mb-2">{data.name || 'YOUR NAME'}</h1>
           <h2 className="text-lg font-medium text-indigo-100 mb-4">{data.role || 'YOUR ROLE'}</h2>
-          <div className="flex flex-wrap justify-center gap-4 text-xs font-medium text-white/90">
+          <div className="flex flex-wrap justify-center items-center gap-2 text-xs font-medium text-white/90">
             {data.email && <span>{data.email}</span>}
-            {data.phone && <span>• {data.phone}</span>}
-            {data.location && <span>• {data.location}</span>}
-            {data.linkedin && <span>• {data.linkedin}</span>}
+            {data.phone && <span>| {data.phone}</span>}
+            {data.location && <span>| {data.location}</span>}
+            {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
           </div>
         </header>
 
@@ -557,10 +567,12 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
         <header className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">{data.name || 'YOUR NAME'}</h1>
           <h2 className="text-lg text-slate-700 italic mb-4">{data.role || 'Your Role'}</h2>
-          <div className="flex flex-wrap justify-center gap-4 text-xs font-sans text-slate-600">
+          <div className="flex flex-wrap justify-center items-center gap-2 text-xs font-sans text-slate-600">
             {data.email && <span>{data.email}</span>}
-            {data.phone && <span>• {data.phone}</span>}
-            {data.location && <span>• {data.location}</span>}
+            {data.phone && <span>| {data.phone}</span>}
+            {data.location && <span>| {data.location}</span>}
+            {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
           </div>
         </header>
 
@@ -647,53 +659,54 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
 
   if (template === "claude") {
     return (
-      <div className="p-[15mm] font-sans text-slate-900 bg-white min-h-full">
+      <div className="p-[15mm] font-sans text-slate-900 bg-white min-h-full leading-[1.65]">
         <header className="mb-6">
-          <h1 className="text-5xl font-medium tracking-tight text-slate-900 mb-1">{data.name || 'Your Name'}</h1>
-          <h2 className="text-sm font-semibold text-[#D97757] uppercase tracking-widest mb-3">{data.role || 'Professional Title'}</h2>
-          <div className="h-[1px] w-full bg-slate-800 mb-3"></div>
-          <div className="flex flex-wrap gap-4 text-[13px] text-slate-600 font-medium">
+          <h1 className="text-[2rem] font-[800] tracking-tight text-[#0F172A] mb-1">{data.name || 'Your Name'}</h1>
+          <h2 className="text-[0.7rem] font-[600] text-[#6366F1] uppercase tracking-[0.18em] mb-2">{data.role || 'Professional Title'}</h2>
+          <div className="h-[2px] w-full bg-[#0F172A] my-[8px]"></div>
+          <div className="flex flex-wrap items-center gap-2 text-[0.65rem] text-[#475569] font-[500]">
             {data.email && <span>{data.email}</span>}
-            {data.phone && <span className="uppercase tracking-wider">| {data.phone}</span>}
-            {data.location && <span className="uppercase tracking-wider">| {data.location}</span>}
+            {data.phone && <span>| {data.phone}</span>}
+            {data.location && <span>| {data.location}</span>}
             {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
           </div>
         </header>
 
         {data.summary && (
-          <section className="mb-6">
-            <p className="text-[14px] leading-relaxed text-slate-800 text-justify">{data.summary}</p>
+          <section className="mb-4">
+            <p className="text-[0.7rem] italic text-[#374151]">{data.summary}</p>
           </section>
         )}
 
         {data.experience.length > 0 && (
           <section className="mb-6">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-300 pb-1 mb-4">Experience</h3>
-            <div className="space-y-6">
+            <h3 className="text-[0.6rem] font-[700] uppercase tracking-[0.15em] text-[#0F172A] border-b border-[#CBD5E1] pb-[3px] mb-4">Experience</h3>
+            <div className="space-y-4">
               {data.experience.map(exp => (
                 <div key={exp.id}>
-                  <div className="flex justify-between items-baseline mb-1">
-                    <h4 className="font-semibold text-slate-900 text-[15px]">{exp.title}</h4>
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{exp.startDate} - {exp.current ? 'Present' : exp.endDate}</span>
+                  <div className="flex justify-between items-baseline mb-0.5">
+                    <h4 className="font-[600] text-[#0F172A] text-[0.75rem]">{exp.title}</h4>
+                    <span className="text-[0.65rem] text-[#64748B] float-right flex-end">{exp.startDate} - {exp.current ? 'Present' : exp.endDate}</span>
                   </div>
-                  <div className="text-[14px] font-medium text-[#D97757] mb-2">{exp.company}</div>
-                  <div className="text-[14px] leading-relaxed text-slate-700 whitespace-pre-wrap pl-3 border-l-2 border-slate-100">{exp.description}</div>
+                  <div className="text-[0.7rem] font-[500] text-[#6366F1] mb-1.5">{exp.company}</div>
+                  <div className="text-[0.65rem] text-[#374151] whitespace-pre-wrap ml-2">{exp.description}</div>
                 </div>
               ))}
             </div>
           </section>
         )}
 
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-8 mb-6">
           {data.education.length > 0 && (
             <section>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-300 pb-1 mb-4">Education</h3>
+              <h3 className="text-[0.6rem] font-[700] uppercase tracking-[0.15em] text-[#0F172A] border-b border-[#CBD5E1] pb-[3px] mb-4">Education</h3>
               <div className="space-y-4">
                 {data.education.map(edu => (
                   <div key={edu.id}>
-                    <h4 className="font-semibold text-[14px] text-slate-900 mb-0.5">{edu.degree}</h4>
-                    <div className="text-[13px] text-[#D97757] font-medium">{edu.institution}</div>
-                    <div className="text-[11px] text-slate-500 mt-1 uppercase tracking-wider">{edu.startYear} - {edu.endYear}</div>
+                    <h4 className="font-[600] text-[0.75rem] text-[#0F172A] mb-0.5">{edu.degree} {edu.field && `in ${edu.field}`}</h4>
+                    <div className="text-[0.7rem] font-[500] text-[#6366F1]">{edu.institution}</div>
+                    <div className="text-[0.65rem] text-[#64748B] float-right flex-end mt-1">{edu.startYear} - {edu.endYear}</div>
                   </div>
                 ))}
               </div>
@@ -702,18 +715,37 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
 
           {(data.technicalSkills.length > 0 || data.softSkills.length > 0) && (
             <section>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-300 pb-1 mb-4">Skills</h3>
-              <div className="text-[13px] leading-relaxed text-slate-700 space-y-2">
+              <h3 className="text-[0.6rem] font-[700] uppercase tracking-[0.15em] text-[#0F172A] border-b border-[#CBD5E1] pb-[3px] mb-4">Skills</h3>
+              <div className="text-[0.65rem] text-[#374151] space-y-2">
                 {data.technicalSkills.length > 0 && (
-                  <div><span className="font-semibold text-slate-900">Technical:</span> {data.technicalSkills.join(', ')}</div>
+                  <div>Technical: {data.technicalSkills.join(', ')}</div>
                 )}
                 {data.softSkills.length > 0 && (
-                  <div><span className="font-semibold text-slate-900">Professional:</span> {data.softSkills.join(', ')}</div>
+                  <div>Professional: {data.softSkills.join(', ')}</div>
                 )}
               </div>
             </section>
           )}
         </div>
+
+        {data.projects.length > 0 && (
+          <section>
+            <h3 className="text-[0.6rem] font-[700] uppercase tracking-[0.15em] text-[#0F172A] border-b border-[#CBD5E1] pb-[3px] mb-4">Projects</h3>
+            <div className="space-y-4">
+              {data.projects.map(proj => (
+                <div key={proj.id}>
+                  <div className="text-[0.75rem]">
+                    <span className="font-[600] text-[#0F172A]">{proj.name}</span>
+                    <span className="text-[#374151]"> - {proj.description}</span>
+                  </div>
+                  {proj.techStack && proj.techStack.length > 0 && (
+                    <div className="text-[0.65rem] text-[#64748B] mt-1">{proj.techStack.join(', ')}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     );
   }
@@ -728,17 +760,13 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
          <h2 className="text-sm font-bold uppercase text-primary tracking-[0.2em] mb-3">
            {data.role || <span className="opacity-20">YOUR ROLE</span>}
          </h2>
-         <div className="flex flex-wrap justify-center items-center gap-3 text-xs font-semibold text-slate-600">
+         <div className="flex flex-wrap justify-center items-center gap-2 text-xs font-semibold text-slate-600">
             {data.email && <span>{data.email}</span>}
-            {data.phone && <span className="uppercase tracking-wider">• {data.phone}</span>}
-            {data.location && <span className="uppercase tracking-wider">• {data.location}</span>}
+            {data.phone && <span>| {data.phone}</span>}
+            {data.location && <span>| {data.location}</span>}
+            {data.linkedin && <span>| {data.linkedin}</span>}
+            {data.portfolio && <span>| {data.portfolio}</span>}
          </div>
-         {(data.linkedin || data.portfolio) && (
-           <div className="flex justify-center gap-3 text-xs font-semibold text-slate-500 mt-1">
-              {data.linkedin && <span>{data.linkedin}</span>}
-              {data.portfolio && <span>• {data.portfolio}</span>}
-           </div>
-         )}
       </div>
 
       {data.summary && (
