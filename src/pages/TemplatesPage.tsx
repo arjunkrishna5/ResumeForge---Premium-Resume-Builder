@@ -26,7 +26,19 @@ export function TemplatesPage() {
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
 
+  const [sortBy, setSortBy] = useState('popular');
+
   const filtered = activeCategory === "All" ? templates : templates.filter(t => t.type === activeCategory || (activeCategory === "ATS-Friendly" && parseInt(t.score) > 94));
+  
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'ats') {
+      return parseInt(b.score) - parseInt(a.score);
+    }
+    if (sortBy === 'name') {
+      return a.name.localeCompare(b.name);
+    }
+    return 0; // popular = original order
+  });
 
   return (
     <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -47,10 +59,17 @@ export function TemplatesPage() {
                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-4 text-sm font-medium focus:border-primary focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-primary/10 transition-colors"
                />
              </div>
-             <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer">
-                <Filter className="h-4 w-4" />
-                Sort: Popular <ChevronDown className="h-4 w-4 ml-1" />
-             </button>
+             <div className="relative group">
+               <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer">
+                  <Filter className="h-4 w-4" />
+                  Sort: {sortBy === 'popular' ? 'Popular' : sortBy === 'ats' ? 'ATS Score' : 'Name'} <ChevronDown className="h-4 w-4 ml-1" />
+               </button>
+               <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-slate-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 overflow-hidden">
+                 <button onClick={() => setSortBy('popular')} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Popular</button>
+                 <button onClick={() => setSortBy('ats')} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">ATS Score</button>
+                 <button onClick={() => setSortBy('name')} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Name A-Z</button>
+               </div>
+             </div>
           </div>
         </div>
 
@@ -74,7 +93,7 @@ export function TemplatesPage() {
       {/* Templates Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <AnimatePresence mode="popLayout">
-          {filtered.map((template, i) => {
+          {sorted.map((template, i) => {
             const RenderComp = TemplateRenders[template.renderType as keyof typeof TemplateRenders];
             return (
               <motion.div

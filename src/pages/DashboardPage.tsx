@@ -60,6 +60,11 @@ export function DashboardPage() {
     }
   };
 
+  const searchQuery = new URLSearchParams(location.search).get('q') || '';
+  const filteredResumes = resumes.filter(r => 
+    !searchQuery || (r.title && r.title.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   useEffect(() => {
     fetchResumes();
   }, [currentUser]);
@@ -187,16 +192,14 @@ export function DashboardPage() {
                      </div>
                   ))}
                 </>
-              ) : resumes.length === 0 ? (
+              ) : filteredResumes.length === 0 ? (
                 <div className="col-span-1 sm:col-span-1 lg:col-span-2 flex flex-col items-center justify-center h-[340px] rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm border-dashed">
                    <FileText className="h-12 w-12 text-slate-300 mb-4" />
-                   <h3 className="text-lg font-bold text-navy mb-1">No resumes yet</h3>
-                   <p className="mb-4 text-sm font-medium max-w-sm">Create your first resume to start applying for your next dream job.</p>
-                   <Button onClick={() => setShowTemplatePicker(true)}>Create Resume</Button>
+                   <h3 className="text-lg font-bold text-navy mb-1">No resumes match your search</h3>
                 </div>
               ) : (
                  <>
-                  {resumes.map((resume, i) => (
+                  {filteredResumes.map((resume, i) => (
                     <motion.div
                       key={resume.id}
                       initial={{ opacity: 0, scale: 0.95 }}

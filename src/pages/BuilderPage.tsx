@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useContext, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
   User, Briefcase, GraduationCap, Code, Rocket, AlignLeft,
-  ChevronLeft, ChevronRight, X, Plus, Sparkles, Loader2, Check, FileText, FileSignature, Trash2, Eye, Info
+  ChevronLeft, ChevronRight, X, Plus, Sparkles, Loader2, Check, FileText, FileSignature, Trash2, Eye, Info, Edit3
 } from "lucide-react";
+import { UserTypeSelector } from "../components/UserTypeSelector";
 import { Button } from "../components/ui/Button";
 import { motion, AnimatePresence } from "motion/react";
 import { improveJobDescription, suggestSkills, generateSummary, generateCoverLetter } from "../lib/gemini";
@@ -13,15 +14,28 @@ import { ResumeRenderer } from "../components/ResumeRenderer";
 
 const genId = () => Math.random().toString(36).substring(7);
 
-const steps = [
-  { title: "Personal Details", icon: User },
-  { title: "Experience", icon: Briefcase },
-  { title: "Education", icon: GraduationCap },
-  { title: "Skills", icon: Code },
-  { title: "Projects", icon: Rocket },
-  { title: "Summary", icon: AlignLeft },
-  { title: "Cover Letter", icon: FileSignature }
-];
+const getActiveSteps = (userType: 'student' | 'professional' | null | undefined) => {
+  if (userType === 'student') {
+    return [
+      { id: 'personal', title: "Personal Details", icon: User },
+      { id: 'education', title: "Education", icon: GraduationCap },
+      { id: 'experience', title: "Experience", icon: Briefcase },
+      { id: 'projects', title: "Projects", icon: Rocket },
+      { id: 'skills', title: "Skills", icon: Code },
+      { id: 'summary', title: "Summary", icon: AlignLeft },
+      { id: 'cover', title: "Cover Letter", icon: FileSignature }
+    ];
+  }
+  return [
+    { id: 'personal', title: "Personal Details", icon: User },
+    { id: 'experience', title: "Experience", icon: Briefcase },
+    { id: 'education', title: "Education", icon: GraduationCap },
+    { id: 'skills', title: "Skills", icon: Code },
+    { id: 'projects', title: "Projects", icon: Rocket },
+    { id: 'summary', title: "Summary", icon: AlignLeft },
+    { id: 'cover', title: "Cover Letter", icon: FileSignature }
+  ];
+};
 
 export function BuilderPage() {
   const { id } = useParams<{ id: string }>();
@@ -266,6 +280,13 @@ export function BuilderPage() {
     } catch(e: any) { showError(e.message || "Failed. Please try again."); console.error(e); } finally { setIsGeneratingCoverLetter(false); }
   };
 
+  const activeSteps = getActiveSteps(formData.userType);
+  const currentStepId = activeSteps[currentStep]?.id || 'personal';
+
+  if (!formData.userType) {
+    return <UserTypeSelector onSelect={(type) => setFormData(prev => ({ ...prev, userType: type }))} />;
+  }
+
   return (
     <div className="flex bg-slate-50 min-h-screen font-sans relative overflow-hidden">
       {/* LEFT PANEL: Form */}
@@ -279,7 +300,7 @@ export function BuilderPage() {
               ResumeForge
             </h1>
             <div className="flex gap-1">
-              {steps.map((_, i) => (
+              {activeSteps.map((_, i) => (
                 <div key={i} className={`h-2 rounded-full transition-all ${i === currentStep ? 'w-6 bg-primary' : i < currentStep ? 'w-2 bg-primary/40' : 'w-2 bg-slate-200'}`} />
               ))}
             </div>
@@ -297,11 +318,11 @@ export function BuilderPage() {
               
               <div className="mb-8">
                 <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
-                  {(() => { const Icon = steps[currentStep].icon; return <Icon className="h-6 w-6" />; })()}
+                  {(() => { const Icon = activeSteps[currentStep].icon; return <Icon className="h-6 w-6" />; })()}
                 </div>
                 <div className="flex items-center mb-2">
-                  <h2 className="text-2xl font-display font-bold text-navy tracking-tight">{steps[currentStep].title}</h2>
-                  {currentStep === 6 && (
+                  <h2 className="text-2xl font-display font-bold text-navy tracking-tight">{activeSteps[currentStep].title}</h2>
+                  {currentStepId === 'cover' && (
                     <div className="ml-3 flex items-center relative group">
                       <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full mr-2 tracking-wider">OPTIONAL</span>
                       <Info className="h-4 w-4 text-slate-400 cursor-help" />
@@ -312,11 +333,11 @@ export function BuilderPage() {
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-slate-500 font-medium">{currentStep === 6 ? "Generate a tailored cover letter to accompany your resume." : "Fill in the details below to build your resume."}</p>
+                <p className="text-sm text-slate-500 font-medium">{currentStepId === 'cover' ? "Generate a tailored cover letter to accompany your resume." : "Fill in the details below to build your resume."}</p>
               </div>
 
               {/* STEP 1: PERSONAL */}
-              {currentStep === 0 && (
+              {currentStepId === 'personal' && (
                 <div className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
@@ -356,7 +377,7 @@ export function BuilderPage() {
               )}
 
               {/* STEP 2: EXPERIENCE */}
-              {currentStep === 1 && (
+              {currentStepId === 'experience' && (
                 <div className="space-y-4">
                   {formData.experience.map((exp) => (
                     <div key={exp.id} className="p-4 border border-slate-200 rounded-xl bg-white shadow-sm flex items-start justify-between">
@@ -365,6 +386,7 @@ export function BuilderPage() {
                         <p className="text-sm text-slate-600 font-medium">{exp.company} • {exp.startDate} - {exp.current ? 'Present' : exp.endDate}</p>
                       </div>
                       <div className="flex gap-2">
+                        <button onClick={() => { setExpForm(exp); setIsAddingExp(true); }} className="p-2 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-50"><Edit3 className="h-4 w-4" /></button>
                         <button onClick={() => { setFormData(prev => ({ ...prev, experience: prev.experience.filter(e => e.id !== exp.id) })) }} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-50"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
@@ -407,7 +429,12 @@ export function BuilderPage() {
                          <Button variant="outline" onClick={() => setIsAddingExp(false)} className="text-slate-500 border-slate-200">Cancel</Button>
                          <Button onClick={() => {
                             if(expForm.title && expForm.company) {
-                               setFormData(prev => ({ ...prev, experience: [...prev.experience, { ...expForm, id: genId() }] }));
+                               setFormData(prev => {
+                                 if (expForm.id) {
+                                   return { ...prev, experience: prev.experience.map(e => e.id === expForm.id ? expForm : e) };
+                                 }
+                                 return { ...prev, experience: [...prev.experience, { ...expForm, id: genId() }] };
+                               });
                                setIsAddingExp(false);
                                setExpForm({ id: "", title: "", company: "", startDate: "", endDate: "", current: false, description: "" });
                             }
@@ -423,7 +450,7 @@ export function BuilderPage() {
               )}
 
               {/* STEP 3: EDUCATION */}
-              {currentStep === 2 && (
+              {currentStepId === 'education' && (
                 <div className="space-y-4">
                   {formData.education.map((edu) => (
                     <div key={edu.id} className="p-4 border border-slate-200 rounded-xl bg-white shadow-sm flex items-start justify-between">
@@ -432,6 +459,7 @@ export function BuilderPage() {
                         <p className="text-sm text-slate-600 font-medium">{edu.degree} in {edu.field}</p>
                       </div>
                       <div className="flex gap-2">
+                        <button onClick={() => { setEduForm(edu); setIsAddingEdu(true); }} className="p-2 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-50"><Edit3 className="h-4 w-4" /></button>
                         <button onClick={() => { setFormData(prev => ({ ...prev, education: prev.education.filter(e => e.id !== edu.id) })) }} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-50"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
@@ -469,7 +497,12 @@ export function BuilderPage() {
                          <Button variant="outline" onClick={() => setIsAddingEdu(false)} className="text-slate-500 border-slate-200">Cancel</Button>
                          <Button onClick={() => {
                             if(eduForm.institution) {
-                               setFormData(prev => ({ ...prev, education: [...prev.education, { ...eduForm, id: genId() }] }));
+                               setFormData(prev => {
+                                 if (eduForm.id) {
+                                   return { ...prev, education: prev.education.map(e => e.id === eduForm.id ? eduForm : e) };
+                                 }
+                                 return { ...prev, education: [...prev.education, { ...eduForm, id: genId() }] };
+                               });
                                setIsAddingEdu(false);
                                setEduForm({ id: "", institution: "", degree: "", field: "", startYear: "", endYear: "", grade: "" });
                             }
@@ -485,7 +518,7 @@ export function BuilderPage() {
               )}
 
               {/* STEP 4: SKILLS */}
-              {currentStep === 3 && (
+              {currentStepId === 'skills' && (
                 <div className="space-y-8">
                   <div className="flex flex-col gap-4">
                      <div className="flex items-end justify-between">
@@ -554,7 +587,7 @@ export function BuilderPage() {
               )}
 
               {/* STEP 5: PROJECTS */}
-              {currentStep === 4 && (
+              {currentStepId === 'projects' && (
                 <div className="space-y-4">
                    {formData.projects.map((proj) => (
                     <div key={proj.id} className="p-4 border border-slate-200 rounded-xl bg-white shadow-sm relative pr-12">
@@ -563,7 +596,10 @@ export function BuilderPage() {
                       <div className="flex flex-wrap gap-1.5">
                          {proj.techStack.map(t => <span key={t} className="px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-500 rounded">{t}</span>)}
                       </div>
-                      <button onClick={() => { setFormData(prev => ({ ...prev, projects: prev.projects.filter(p => p.id !== proj.id) })) }} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-50"><Trash2 className="h-4 w-4" /></button>
+                      <div className="absolute top-4 right-4 flex gap-1">
+                        <button onClick={() => { setProjForm({...proj, techStackInput: proj.techStack.join(', ')}); setIsAddingProj(true); }} className="p-2 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-50"><Edit3 className="h-4 w-4" /></button>
+                        <button onClick={() => { setFormData(prev => ({ ...prev, projects: prev.projects.filter(p => p.id !== proj.id) })) }} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-50"><Trash2 className="h-4 w-4" /></button>
+                      </div>
                     </div>
                   ))}
 
@@ -596,7 +632,12 @@ export function BuilderPage() {
                          <Button onClick={() => {
                             if(projForm.name) {
                                const tags = projForm.techStackInput.split(',').map(s=>s.trim()).filter(Boolean);
-                               setFormData(prev => ({ ...prev, projects: [...prev.projects, { ...projForm, id: genId(), techStack: tags }] }));
+                               setFormData(prev => {
+                                 if (projForm.id) {
+                                   return { ...prev, projects: prev.projects.map(p => p.id === projForm.id ? { ...projForm, techStack: tags } : p) };
+                                 }
+                                 return { ...prev, projects: [...prev.projects, { ...projForm, id: genId(), techStack: tags }] };
+                               });
                                setIsAddingProj(false);
                                setProjForm({ id: "", name: "", description: "", techStackInput: "", techStack: [], liveUrl: "", githubUrl: "" });
                             }
@@ -612,7 +653,7 @@ export function BuilderPage() {
               )}
 
               {/* STEP 6: SUMMARY */}
-              {currentStep === 5 && (
+              {currentStepId === 'summary' && (
                 <div className="space-y-6">
                   <div className="p-5 border border-primary/20 bg-primary/5 rounded-2xl flex flex-col items-start gap-4">
                      <div>
@@ -638,7 +679,7 @@ export function BuilderPage() {
               )}
 
               {/* STEP 7: COVER LETTER */}
-              {currentStep === 6 && (
+              {currentStepId === 'cover' && (
                 <div className="space-y-6">
                   <div className="p-5 border border-primary/20 bg-primary/5 rounded-2xl space-y-4">
                      <div>
@@ -692,7 +733,7 @@ export function BuilderPage() {
         <div className="p-4 sm:p-6 border-t border-slate-200 bg-white flex items-center justify-between shrink-0">
           <Button variant="outline" onClick={() => setCurrentStep(p => p - 1)} disabled={currentStep === 0} className="border-slate-200 px-6 font-bold text-slate-600"><ChevronLeft className="h-4 w-4 mr-2" /> Back</Button>
           
-          {currentStep === 5 ? (
+          {currentStep === activeSteps.length - 2 ? (
             <div className="flex items-center gap-3">
               <Button variant="outline" onClick={handleSkipToDownload} className="px-6 font-bold text-primary border-primary hover:bg-primary/5" disabled={isSaving}>
                 {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Skip to Download
@@ -701,7 +742,7 @@ export function BuilderPage() {
                 Add Cover Letter <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
-          ) : currentStep === steps.length - 1 ? (
+          ) : currentStep === activeSteps.length - 1 ? (
              <Button onClick={manuallySaveAndFinish} className="px-6 font-bold shadow-[0_4px_12px_rgba(99,102,241,0.2)]" disabled={saveStatus === "saving"}><Sparkles className="h-4 w-4 mr-2" /> {saveStatus === "saving" ? 'Saving...' : 'Finish & Download'}</Button>
           ) : (
              <Button onClick={() => setCurrentStep(p => p + 1)} className="px-6 font-bold shadow-[0_4px_12px_rgba(99,102,241,0.2)]">Next Step <ChevronRight className="h-4 w-4 ml-2" /></Button>

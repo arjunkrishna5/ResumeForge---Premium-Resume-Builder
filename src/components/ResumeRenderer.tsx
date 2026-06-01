@@ -457,7 +457,7 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
           </section>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4">
           {data.education.length > 0 && (
             <section>
               <h3 className="text-[11px] font-bold uppercase border-b border-slate-300 mb-2 pb-0.5 text-slate-800">Education</h3>
@@ -810,7 +810,7 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-6 w-full">
+      <div className="flex flex-col gap-6 w-full">
         {(data.technicalSkills.length > 0 || data.softSkills.length > 0) && (
           <div>
             <div className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-1 mb-3">Skills</div>

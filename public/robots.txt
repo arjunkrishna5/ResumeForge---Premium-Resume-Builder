@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /templates
+Disallow: /dashboard
+Disallow: /builder
+Disallow: /settings
+Disallow: /preview
+Sitemap: https://resume-forge-premium-resume-builder.vercel.app/sitemap.xml

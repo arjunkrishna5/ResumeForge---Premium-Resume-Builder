@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 export const config = {
   api: {
     bodyParser: false,
+    maxDuration: 30,
   },
 };
 
@@ -15,111 +16,115 @@ export default async function handler(
   }
 
   try {
-    // Collect raw body chunks
     const chunks: Buffer[] = [];
     for await (const chunk of req) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      chunks.push(Buffer.isBuffer(chunk) 
+        ? chunk 
+        : Buffer.from(chunk));
     }
     const rawBody = Buffer.concat(chunks);
-    
-    // Get content type to find boundary
+
     const contentType = req.headers['content-type'] || '';
-    const boundaryMatch = contentType.match(/boundary=([^\s;]+)/);
+    const boundaryMatch = contentType.match(
+      /boundary=(?:"([^"]+)"|([^\s;]+))/
+    );
+    
     if (!boundaryMatch) {
       return res.status(400).json({ 
-        error: 'Invalid multipart request' 
+        error: 'Invalid request format' 
       });
     }
-    
-    const boundary = boundaryMatch[1];
-    const boundaryBuffer = Buffer.from(`--${boundary}`);
-    
-    // Split by boundary
-    const parts = splitBuffer(rawBody, boundaryBuffer);
-    
+
+    const boundary = boundaryMatch[1] || boundaryMatch[2];
+    const delimiter = Buffer.from('\r\n--' + boundary);
+    const firstDelimiter = Buffer.from('--' + boundary);
+
+    let searchBuffer = rawBody;
+    const firstIdx = searchBuffer.indexOf(firstDelimiter);
+    if (firstIdx !== -1) {
+      searchBuffer = searchBuffer.slice(
+        firstIdx + firstDelimiter.length
+      );
+    }
+
     let fileBuffer: Buffer | null = null;
-    let mimeType = '';
+    let detectedMime = '';
+
+    const parts = searchBuffer.toString('binary').split(
+      '\r\n--' + boundary
+    );
     
     for (const part of parts) {
-      const headerEnd = part.indexOf('\r\n\r\n');
-      if (headerEnd === -1) continue;
-      
-      const headerSection = part.slice(0, headerEnd).toString();
-      const fileContent = part.slice(headerEnd + 4);
-      
-      if (headerSection.includes('filename=') && 
-          fileContent.length > 2) {
-        // Remove trailing \r\n
-        fileBuffer = fileContent.slice(
-          0, 
-          fileContent.length - 2
+      if (part.includes('filename=')) {
+        const headerBodySplit = part.indexOf('\r\n\r\n');
+        if (headerBodySplit === -1) continue;
+        
+        const headers = part.slice(0, headerBodySplit);
+        const bodyBinary = part.slice(headerBodySplit + 4)
+          .replace(/\r\n$/, '');
+        
+        const mimeMatch = headers.match(
+          /content-type:\s*([^\r\n]+)/i
         );
-        const mimeMatch = headerSection.match(
-          /Content-Type:\s*([^\r\n]+)/i
-        );
-        if (mimeMatch) mimeType = mimeMatch[1].trim();
+        if (mimeMatch) detectedMime = mimeMatch[1].trim();
+        
+        fileBuffer = Buffer.from(bodyBinary, 'binary');
         break;
       }
     }
-    
-    if (!fileBuffer) {
-      return res.status(400).json({ error: 'No file found in request' });
+
+    if (!fileBuffer || fileBuffer.length < 10) {
+      return res.status(400).json({ 
+        error: 'No valid file found in request' 
+      });
     }
-    
-    let text = '';
-    
-    if (mimeType.includes('pdf')) {
-      const pdfModule = await import('pdf-parse');
-      const PDFParse = (pdfModule as any).default || pdfModule;
-      const parsed = await PDFParse(fileBuffer);
-      text = parsed.text;
-    } else if (mimeType.includes('wordprocessingml') || 
-               mimeType.includes('docx')) {
+
+    let extractedText = '';
+
+    const isPdf = detectedMime.includes('pdf') || 
+      (fileBuffer[0] === 0x25 && fileBuffer[1] === 0x50 && 
+       fileBuffer[2] === 0x44 && fileBuffer[3] === 0x46);
+
+    const isDocx = detectedMime.includes('wordprocessingml') ||
+      detectedMime.includes('docx') ||
+      (fileBuffer[0] === 0x50 && fileBuffer[1] === 0x4B);
+
+    if (isPdf) {
+      const pdfParseModule = await import('pdf-parse');
+      const pdfParse = (pdfParseModule as any).default 
+        || pdfParseModule;
+      const result = await pdfParse(fileBuffer);
+      extractedText = result.text;
+    } else if (isDocx) {
       const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ 
         buffer: fileBuffer 
       });
-      text = result.value;
+      extractedText = result.value;
     } else {
       return res.status(400).json({ 
         error: 'Only PDF and DOCX files are supported' 
       });
     }
-    
-    if (!text || text.trim().length < 10) {
+
+    const cleaned = extractedText
+      .replace(/\s{3,}/g, '\n\n')
+      .trim();
+
+    if (cleaned.length < 20) {
       return res.status(400).json({ 
-        error: 'Could not extract text from file. ' +
-               'Please ensure the file is not scanned/image-based.' 
+        error: 'Could not extract readable text. ' +
+               'The file may be image-based or protected.' 
       });
     }
-    
-    return res.json({ text: text.trim() });
-    
-  } catch (error: any) {
-    console.error('Extract text error:', error);
+
+    return res.json({ text: cleaned });
+
+  } catch (err: any) {
+    console.error('extractText error:', err);
     return res.status(500).json({ 
       error: 'Failed to process file: ' + 
-             (error.message || 'Unknown error') 
+             (err.message || 'Unknown error') 
     });
   }
-}
-
-function splitBuffer(buffer: Buffer, delimiter: Buffer): Buffer[] {
-  const parts: Buffer[] = [];
-  let start = 0;
-  
-  while (true) {
-    const idx = buffer.indexOf(delimiter, start);
-    if (idx === -1) break;
-    if (idx > start) {
-      parts.push(buffer.slice(start, idx));
-    }
-    start = idx + delimiter.length;
-  }
-  
-  if (start < buffer.length) {
-    parts.push(buffer.slice(start));
-  }
-  
-  return parts.filter(p => p.length > 4);
 }

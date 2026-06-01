@@ -9,6 +9,13 @@ export default async function handler(
   req: VercelRequest, 
   res: VercelResponse
 ) {
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY is not set');
+    return res.status(500).json({ 
+      error: 'AI service not configured. API key missing.' 
+    });
+  }
+  
   console.log('API Key present:', !!process.env.GEMINI_API_KEY);
 
   if (req.method !== 'POST') {

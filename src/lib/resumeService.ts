@@ -49,20 +49,31 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 export interface ExperienceItem {
-  id: string; title: string; company: string; startDate: string; endDate: string; current: boolean; description: string;
+  id: string; title: string; company: string; startDate: string; endDate: string; current: boolean; description: string; type?: string;
 }
 
 export interface EducationItem {
-  id: string; institution: string; degree: string; field: string; startYear: string; endYear: string; grade: string;
+  id: string; institution: string; degree: string; field: string; startYear: string; endYear: string; grade: string; gpa?: string; coursework?: string; honors?: string;
 }
 
 export interface ProjectItem {
-  id: string; name: string; description: string; techStack: string[]; liveUrl: string; githubUrl: string;
+  id: string; name: string; description: string; techStack: string[]; liveUrl: string; githubUrl: string; isAcademic?: boolean;
+}
+
+export interface CertificationItem {
+  name: string; issuer: string; date: string;
+}
+
+export interface AchievementItem {
+  title: string; subtitle: string; date: string;
 }
 
 export interface ResumeData {
+  userType?: 'student' | 'professional';
   name: string; role: string; email: string; phone: string; location: string; linkedin: string; portfolio: string; summary: string;
   experience: ExperienceItem[]; education: EducationItem[]; technicalSkills: string[]; softSkills: string[]; projects: ProjectItem[];
+  certifications?: CertificationItem[];
+  achievements?: AchievementItem[];
   coverLetterInfo?: { jobTitle: string; company: string; tone: string };
   coverLetter?: string;
 }
@@ -87,7 +98,7 @@ export interface ActivityDocument {
 
 export const defaultResumeData: ResumeData = {
   name: "", role: "", email: "", phone: "", location: "", linkedin: "", portfolio: "", summary: "",
-  experience: [], education: [], technicalSkills: [], softSkills: [], projects: []
+  experience: [], education: [], technicalSkills: [], softSkills: [], projects: [], certifications: [], achievements: []
 };
 
 // Collection structure: users/{userId}/resumes/{resumeId}

@@ -180,22 +180,26 @@ export function DashboardLayout() {
            </div>
            
            <div className="flex items-center gap-4">
-             <div className="relative hidden sm:block w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search templates..." 
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const query = e.currentTarget.value;
-                      if (query) {
-                        navigate(`/templates?q=${encodeURIComponent(query)}`);
+             {!(location.pathname.startsWith('/builder') || location.pathname.startsWith('/settings') || location.pathname.startsWith('/preview')) && (
+               <div className="relative hidden sm:block w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search..." 
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const query = e.currentTarget.value;
+                        if (location.pathname.startsWith('/dashboard')) {
+                           navigate(`/dashboard${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+                        } else {
+                           navigate(`/templates${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+                        }
                       }
-                    }
-                  }}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm focus:border-primary focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-primary/10 transition-colors"
-                />
-             </div>
+                    }}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm focus:border-primary focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-primary/10 transition-colors"
+                  />
+               </div>
+             )}
              
              <button className="relative rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-navy transition-colors cursor-pointer">
                <Bell className="h-5 w-5" />
