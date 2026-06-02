@@ -1,6 +1,6 @@
 import { User, Shield, Bell, Trash2, Camera, Upload, CheckCircle2 } from "lucide-react";
 import { Button } from "../components/ui/Button";
-import { useState, useContext, useEffect, useRef } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 

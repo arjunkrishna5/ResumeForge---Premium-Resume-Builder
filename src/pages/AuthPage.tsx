@@ -4,6 +4,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
 import { FileText, Mail, Lock, User, AlertCircle, ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
+import { Analytics } from "../lib/analytics";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,6 +25,7 @@ export default function AuthPage() {
         await signInWithEmail(email, password);
       } else {
         await signUpWithEmail(name, email, password);
+        Analytics.userSignedUp('email');
       }
     } catch (err: any) {
       if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -51,6 +53,9 @@ export default function AuthPage() {
     setLoading(true);
     try {
       await signInWithGoogle();
+      if (!isLogin) {
+        Analytics.userSignedUp('google');
+      }
     } catch (err: any) {
       setError(err.message || 'Could not sign in with Google.');
     } finally {

@@ -9,6 +9,9 @@ export default async function handler(
   req: VercelRequest, 
   res: VercelResponse
 ) {
+  console.log('gemini called, action:', req.body?.action);
+  console.log('API key set:', !!process.env.GEMINI_API_KEY);
+
   if (!process.env.GEMINI_API_KEY) {
     console.error('GEMINI_API_KEY is not set');
     return res.status(500).json({ 
@@ -104,6 +107,58 @@ export default async function handler(
       } catch {
         return res.status(400).json({ 
           error: 'Could not parse resume data' 
+        });
+      }
+
+    } else if (action === 'calculateATSScore') {
+      const resumeText = `
+        Name: ${params.name}
+        Role: ${params.role}
+        Summary: ${params.summary}
+        Experience: ${params.experience?.map((e: any) => 
+          `${e.title} at ${e.company}: ${e.description}`
+        ).join('\n')}
+        Skills: ${[
+          ...(params.technicalSkills || []),
+          ...(params.softSkills || [])
+        ].join(', ')}
+        Education: ${params.education?.map((e: any) => 
+          `${e.degree} from ${e.institution}`
+        ).join('\n')}
+      `;
+      
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: `Analyze this resume for ATS compatibility 
+        and return ONLY a JSON object (no markdown):
+        {
+          "score": <number 0-100>,
+          "grade": <"A"|"B"|"C"|"D">,
+          "issues": [<up to 4 short strings describing problems>],
+          "suggestions": [<up to 3 short improvement tips>]
+        }
+        
+        Score based on:
+        - Has professional summary (20 points)
+        - Has measurable achievements with numbers (20 points)
+        - Skills section present and relevant (20 points)
+        - Consistent date formatting (15 points)
+        - Contact info complete (15 points)
+        - No spelling/grammar issues visible (10 points)
+        
+        Resume: ${resumeText}`
+      });
+      
+      try {
+        const cleaned = (response.text ?? '')
+          .replace(/\`\`\`json/g, '')
+          .replace(/\`\`\`/g, '')
+          .trim();
+        return res.json({ atsData: JSON.parse(cleaned) });
+      } catch {
+        return res.json({ 
+          atsData: { score: 70, grade: 'B', 
+            issues: [], suggestions: [] } 
         });
       }
 

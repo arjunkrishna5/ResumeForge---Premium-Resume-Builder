@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useContext, useCallback } from "react";
+import React, { useState, useEffect, useRef, useContext, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
   User, Briefcase, GraduationCap, Code, Rocket, AlignLeft,
@@ -8,8 +8,9 @@ import { UserTypeSelector } from "../components/UserTypeSelector";
 import { Button } from "../components/ui/Button";
 import { motion, AnimatePresence } from "motion/react";
 import { improveJobDescription, suggestSkills, generateSummary, generateCoverLetter } from "../lib/gemini";
+import { Analytics } from "../lib/analytics";
 import { AuthContext } from "../contexts/AuthContext";
-import { getResume, saveResume, ResumeData, defaultResumeData } from "../lib/resumeService";
+import { getResume, saveResume, getUserResumes, ResumeData, defaultResumeData } from "../lib/resumeService";
 import { ResumeRenderer } from "../components/ResumeRenderer";
 
 const genId = () => Math.random().toString(36).substring(7);
@@ -43,11 +44,16 @@ export function BuilderPage() {
   const location = useLocation();
   const { currentUser } = useContext(AuthContext);
 
-  const [formData, setFormData] = useState<ResumeData>(defaultResumeData);
+  const [formData, setRawFormData] = useState<ResumeData>(defaultResumeData);
+  const hasUserEdited = useRef(false);
+  const setFormData = useCallback((value: React.SetStateAction<ResumeData>) => {
+    hasUserEdited.current = true;
+    setRawFormData(value);
+  }, []);
   const [currentStep, setCurrentStep] = useState(0);
   const [currentResumeId, setCurrentResumeId] = useState<string | null>(id || null);
 
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialLoadRef = useRef(true);
   const isFirstRender = useRef(true);
@@ -111,7 +117,7 @@ export function BuilderPage() {
     async function loadData() {
       // Check importedData first
       if (location.state?.importedData) {
-        setFormData(location.state.importedData);
+        setRawFormData(location.state.importedData);
         window.history.replaceState({}, document.title);
         isInitialLoadRef.current = false;
         return;
@@ -124,7 +130,7 @@ export function BuilderPage() {
       try {
         const doc = await getResume(currentUser.uid, id);
         if (doc) {
-          setFormData(doc.data);
+          setRawFormData(doc.data);
           setCurrentResumeId(doc.id);
           if (doc.templateId) {
              setSelectedTemplate(doc.templateId);
@@ -144,34 +150,45 @@ export function BuilderPage() {
     loadData();
   }, [id, currentUser, navigate, location.state]);
 
-  // Debounced Auto-save
+  // Auto-save effect
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (isInitialLoadRef.current) return;
+    // Never save on initial mount
+    if (!hasUserEdited.current) return;
+    // Never save if no user
     if (!currentUser) return;
-
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     
-    setSaveStatus("saving");
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    setSaveStatus('saving');
+    
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        const savedId = await saveResume(currentUser.uid, currentResumeId, formData);
+        const savedId = await saveResume(
+          currentUser.uid,
+          currentResumeId || null,
+          formData
+        );
         if (!currentResumeId) {
           setCurrentResumeId(savedId);
+          // Update URL to include new ID without triggering a re-render
+          window.history.replaceState(
+            null, '', `/builder/${savedId}`
+          );
         }
-        setSaveStatus("saved");
-        setTimeout(() => setSaveStatus("idle"), 2000);
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (err) {
-        console.error("Failed to auto-save", err);
-        setSaveStatus("idle");
+        console.error('Failed to auto-save', err);
+        setSaveStatus('error');
       }
-    }, currentStep === 6 ? 5000 : 3000);
-
+    }, 3000);
+    
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     };
   }, [formData, selectedTemplate, currentUser, currentResumeId]);
 
@@ -182,6 +199,7 @@ export function BuilderPage() {
     try {
       setSaveStatus("saving");
       const savedId = await saveResume(currentUser.uid, currentResumeId, formData);
+      Analytics.resumeCreated(selectedTemplate, formData.userType || "professional");
       navigate(`/preview/${savedId || currentResumeId}`);
     } catch (e) {
       console.error(e);
@@ -193,14 +211,15 @@ export function BuilderPage() {
     if (!currentUser) return;
     setIsSaving(true);
     try {
-      const id = await saveResume(
-        currentUser.uid, 
-        currentResumeId || null, 
+      const savedId = await saveResume(
+        currentUser.uid,
+        currentResumeId || null,
         formData
       );
-      navigate(`/preview/${id}`);
+      navigate(`/preview/${savedId}`);
     } catch (err) {
       console.error('Save failed:', err);
+      showError('Failed to save. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -223,6 +242,74 @@ export function BuilderPage() {
 
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false);
+  
+  const [atsScore, setAtsScore] = useState<{
+    score: number;
+    grade: string;
+    issues: string[];
+    suggestions: string[];
+  } | null>(null);
+  const [isCalculatingATS, setIsCalculatingATS] = useState(false);
+
+  const handleCalculateATS = async () => {
+    setIsCalculatingATS(true);
+    try {
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'calculateATSScore',
+          ...formData
+        })
+      });
+      const data = await res.json();
+      if (data.atsData) setAtsScore(data.atsData);
+    } catch (err) {
+      console.error('ATS calculation failed:', err);
+    } finally {
+      setIsCalculatingATS(false);
+    }
+  };
+
+  const [showContinuePrompt, setShowContinuePrompt] = useState(false);
+  const [lastInProgressResume, setLastInProgressResume] = useState<any>(null);
+
+  const formatRelativeTime = (timestamp: any) => {
+    if (!timestamp) return 'recently';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const diff = (new Date().getTime() - date.getTime()) / 1000;
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    return 'Yesterday';
+  };
+
+  useEffect(() => {
+    if (!currentUser || currentResumeId) return;
+    
+    const checkLastResume = async () => {
+      try {
+        const resumes = await getUserResumes(currentUser.uid);
+        const lastResume = resumes[0];
+        
+        if (lastResume && lastResume.completion < 100) {
+          setLastInProgressResume(lastResume);
+          setShowContinuePrompt(true);
+        }
+      } catch (err) {
+        console.error('Could not check last resume:', err);
+      }
+    };
+    
+    checkLastResume();
+  }, [currentUser, currentResumeId]);
+
+  // Recalculate ATS score when advancing to the last step (Step 6 or 7)
+  useEffect(() => {
+    if ((currentStep === 5 || currentStep === 6) && formData.name) {
+       handleCalculateATS();
+    }
+  }, [currentStep]);
+
   const [errorMsg, setErrorMsg] = useState("");
 
   const showError = (msg: string) => {
@@ -240,7 +327,8 @@ export function BuilderPage() {
     try {
       const improved = await improveJobDescription(expForm.description);
       setExpForm(prev => ({ ...prev, description: improved }));
-    } catch(e: any) { showError(e.message || "Failed. Please try again."); console.error(e); } finally { setIsImprovingExp(false); }
+    Analytics.aiFeatureUsed("improve_exp");
+    } catch(err: any) { console.error('AI call failed:', err); showError(String(err)); } finally { setIsImprovingExp(false); }
   };
 
   const handleSuggestSkills = async () => {
@@ -249,7 +337,8 @@ export function BuilderPage() {
     try {
       const newTech = await suggestSkills(formData.role);
       setFormData(prev => ({ ...prev, technicalSkills: [...prev.technicalSkills, ...newTech] }));
-    } catch(e: any) { showError(e.message || "Failed. Please try again."); console.error(e); } finally { setIsSuggestingSkills(false); }
+    Analytics.aiFeatureUsed("suggest_skills");
+    } catch(err: any) { console.error('AI call failed:', err); showError(String(err)); } finally { setIsSuggestingSkills(false); }
   };
 
   const handleAutoSummary = async () => {
@@ -257,7 +346,8 @@ export function BuilderPage() {
     try {
       const g = await generateSummary(formData);
       setFormData(prev => ({ ...prev, summary: g }));
-    } catch(e: any) { showError(e.message || "Failed. Please try again."); console.error(e); } finally { setIsGeneratingSummary(false); }
+    Analytics.aiFeatureUsed("auto_summary");
+    } catch(err: any) { console.error('AI call failed:', err); showError(String(err)); } finally { setIsGeneratingSummary(false); }
   };
   
   const handleAutoCoverLetter = async () => {
@@ -277,7 +367,8 @@ export function BuilderPage() {
       });
       setFormData(prev => ({ ...prev, coverLetter: g }));
       setPreviewTab("cover");
-    } catch(e: any) { showError(e.message || "Failed. Please try again."); console.error(e); } finally { setIsGeneratingCoverLetter(false); }
+    Analytics.aiFeatureUsed("auto_cover_letter");
+    } catch(err: any) { console.error('AI call failed:', err); showError(String(err)); } finally { setIsGeneratingCoverLetter(false); }
   };
 
   const activeSteps = getActiveSteps(formData.userType);
@@ -311,7 +402,45 @@ export function BuilderPage() {
           </div>
         </div>
 
+        
+        {/* Continue Banner */}
+        {showContinuePrompt && lastInProgressResume && (
+          <div className="mx-6 mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-navy">
+                Continue where you left off?
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                "{lastInProgressResume.title}" — 
+                last edited {formatRelativeTime(
+                  lastInProgressResume.updatedAt
+                )}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => {
+                  setShowContinuePrompt(false);
+                  setLastInProgressResume(null);
+                }}
+                className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5"
+              >
+                Start fresh
+              </button>
+              <button 
+                onClick={() => {
+                  navigate(`/builder/${lastInProgressResume.id}`);
+                }}
+                className="text-xs font-semibold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary/90"
+              >
+                Continue →
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Content Area */}
+
         <div className="flex-1 overflow-y-auto p-6 sm:p-8 relative">
           <AnimatePresence mode="wait">
             <motion.div key={currentStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
@@ -345,8 +474,10 @@ export function BuilderPage() {
                       <input type="text" value={formData.name} onChange={e => handleInputChange('name', e.target.value)} placeholder="Jane Doe" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm font-medium transition-all" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Target Role</label>
-                      <input type="text" value={formData.role} onChange={e => handleInputChange('role', e.target.value)} placeholder="e.g. Software Engineer" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm font-medium transition-all" />
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                        {formData.userType === 'student' ? 'Target Role / Internship (Optional)' : 'Target Role'}
+                      </label>
+                      <input type="text" value={formData.role} onChange={e => handleInputChange('role', e.target.value)} placeholder={formData.userType === 'student' ? "e.g. Software Engineering Intern" : "e.g. Software Engineer"} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/10 text-sm font-medium transition-all" />
                     </div>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -419,7 +550,7 @@ export function BuilderPage() {
                        <div className="mt-4">
                           <div className="flex items-center justify-between mb-1.5">
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
-                            <button onClick={handleImproveExp} disabled={isImprovingExp || !expForm.description} className="text-xs font-bold text-primary flex items-center hover:text-[#4F46E5] disabled:opacity-50">
+                            <button type="button" onClick={handleImproveExp} disabled={isImprovingExp || !expForm.description} className="text-xs font-bold text-primary flex items-center hover:text-[#4F46E5] disabled:opacity-50">
                               {isImprovingExp ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />} AI Improve
                             </button>
                           </div>
@@ -526,7 +657,7 @@ export function BuilderPage() {
                           <h3 className="font-bold text-navy text-sm mb-1">AI Skill Suggestions</h3>
                           <p className="text-xs text-slate-600 font-medium">Get suggestions based on your target role: <strong className="text-primary">{formData.role || 'Not specified'}</strong></p>
                        </div>
-                       <Button size="sm" onClick={handleSuggestSkills} disabled={!formData.role || isSuggestingSkills} className="shrink-0">
+                       <Button type="button" size="sm" onClick={handleSuggestSkills} disabled={!formData.role || isSuggestingSkills} className="shrink-0">
                          {isSuggestingSkills ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />} Suggest
                        </Button>
                      </div>
@@ -660,7 +791,7 @@ export function BuilderPage() {
                        <h3 className="font-bold text-navy text-sm mb-1">Writer's block?</h3>
                        <p className="text-xs text-slate-600 font-medium">We can write a tailored summary using all the data you just provided.</p>
                      </div>
-                     <Button size="sm" onClick={handleAutoSummary} disabled={isGeneratingSummary} className="w-full shrink-0 flex items-center justify-center gap-2">
+                     <Button type="button" size="sm" onClick={handleAutoSummary} disabled={isGeneratingSummary} className="w-full shrink-0 flex items-center justify-center gap-2">
                        {isGeneratingSummary ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {isGeneratingSummary ? 'Writing Magic...' : 'AI Auto-Write Summary'}
                      </Button>
                   </div>
@@ -704,7 +835,7 @@ export function BuilderPage() {
                           ))}
                         </div>
                      </div>
-                     <Button size="sm" onClick={handleAutoCoverLetter} disabled={isGeneratingCoverLetter} className="w-full shrink-0 flex items-center justify-center gap-2">
+                     <Button type="button" size="sm" onClick={handleAutoCoverLetter} disabled={isGeneratingCoverLetter} className="w-full shrink-0 flex items-center justify-center gap-2">
                        {isGeneratingCoverLetter ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} AI Generate Cover Letter
                      </Button>
                   </div>
@@ -772,7 +903,67 @@ export function BuilderPage() {
             )}
          </div>
 
-         <div className="flex-1 overflow-hidden flex items-center justify-center p-8 relative" ref={previewContainerRef}>
+                      {/* ATS Score display */}
+             {atsScore !== null && (
+              <div className="mx-4 mb-3 p-3 bg-white border border-slate-200 rounded-xl shadow-sm z-20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">ATS Score</span>
+                  <div className={`text-lg font-bold ${
+                    atsScore.score >= 80 ? 'text-emerald-600' :
+                    atsScore.score >= 60 ? 'text-amber-600' : 
+                    'text-red-500'
+                  }`}>
+                    {atsScore.score}/100
+                  </div>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
+                  <div 
+                    className={`h-full rounded-full transition-all ${
+                      atsScore.score >= 80 ? 'bg-emerald-500' :
+                      atsScore.score >= 60 ? 'bg-amber-500' : 
+                      'bg-red-500'
+                    }`}
+                    style={{ width: `${atsScore.score}%` }}
+                  />
+                </div>
+                {atsScore.issues.length > 0 && (
+                  <div className="space-y-1">
+                    {atsScore.issues.slice(0,2).map((issue, i) => (
+                      <p key={i} className="text-[10px] text-slate-500 flex items-center gap-1">
+                        <span className="text-amber-500">⚠</span>
+                        {issue}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCalculateATS}
+                  disabled={isCalculatingATS}
+                  className="mt-2 w-full text-[10px] font-semibold text-primary hover:bg-primary/5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isCalculatingATS ? 'Analyzing...' : '↻ Recalculate'}
+                </button>
+              </div>
+            )}
+
+            {atsScore === null && formData.name && (
+              <div className="mx-4 mb-3 z-20">
+                <button
+                  type="button"
+                  onClick={handleCalculateATS}
+                  disabled={isCalculatingATS}
+                  className="w-full p-3 bg-white border border-dashed border-slate-300 rounded-xl text-xs font-semibold text-slate-500 hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                >
+                  {isCalculatingATS ? 
+                    '⟳ Calculating ATS Score...' : 
+                    '✓ Check ATS Score'
+                  }
+                </button>
+              </div>
+            )}
+
+          <div className="flex-1 overflow-hidden flex items-center justify-center p-8 relative" ref={previewContainerRef}>
            <AnimatePresence>
              {errorMsg && (
                <motion.div initial={{ opacity: 0, y: 50, x: "-50%" }} animate={{ opacity: 1, y: 0, x: "-50%" }} exit={{ opacity: 0, y: 50, x: "-50%" }} className="absolute bottom-8 left-1/2 bg-red-500 text-white px-6 py-3 rounded-xl shadow-xl font-bold text-sm z-50 flex items-center gap-2">

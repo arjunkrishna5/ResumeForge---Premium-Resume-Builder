@@ -9,6 +9,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { ResumeRenderer } from "../components/ResumeRenderer";
 import { generateDocx } from "../lib/docxExporter";
+import { Analytics } from "../lib/analytics";
 
 export function ResumePreviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +53,7 @@ export function ResumePreviewPage() {
       
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${resumeData.name.replace(/\s+/g, "_") || "Resume"}.pdf`);
+      Analytics.resumeDownloaded('pdf');
     } catch (error) {
       console.error("Error generating PDF", error);
     } finally {
@@ -64,6 +66,7 @@ export function ResumePreviewPage() {
     setDownloadingDocx(true);
     try {
       await generateDocx(resumeData, `${resumeData.name.replace(/\s+/g, "_") || "Resume"}.docx`);
+      Analytics.resumeDownloaded('docx');
     } catch(err) {
       console.error("Error downloading docx", err);
     } finally {

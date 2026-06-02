@@ -170,8 +170,21 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
 
   if (template === "creative") {
     return (
-      <div className="flex font-sans text-slate-800 bg-white min-h-[297mm]">
-         <aside className="w-[30%] bg-indigo-900 text-white p-8 h-full">
+      <div style={{
+        width: '210mm',
+        minHeight: '297mm', 
+        transformOrigin: 'top center',
+        display: 'flex',
+        flexDirection: 'row',
+        overflow: 'hidden',  // prevent overflow
+      }}>
+         <aside style={{ 
+          width: '30%', 
+          backgroundColor: '#4338CA',
+          minHeight: '297mm',
+          padding: '24px 16px',
+          flexShrink: 0  // prevent shrinking
+        }} className="text-white h-full">
             <h1 className="text-3xl font-display font-bold mb-2 break-words leading-tight">{data.name || 'YOUR NAME'}</h1>
             <h2 className="text-sm font-medium text-indigo-300 uppercase tracking-widest mb-8">{data.role || 'ROLE'}</h2>
             
@@ -194,7 +207,12 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
                </div>
             )}
          </aside>
-         <main className="w-[70%] p-10 bg-white">
+         <main style={{ 
+          flex: 1, 
+          backgroundColor: 'white',
+          padding: '24px',
+          overflow: 'hidden'
+        }} className="w-[70%]">
             {data.summary && (
                <section className="mb-8">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-900 border-b-2 border-indigo-500 w-fit pb-1 mb-4">Profile</h3>
