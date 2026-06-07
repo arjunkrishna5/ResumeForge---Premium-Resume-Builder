@@ -95,9 +95,13 @@ export function DashboardPage() {
   const CheckCircle2 = (props:any) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>;
   const Activity = (props:any) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
 
+  const totalDownloads = resumes.reduce(
+    (sum, r) => sum + (r.downloadCount || 0), 0
+  );
+
   const stats = [
     { label: "Total Resumes", value: resumes.length.toString(), text: "Saved successfully", textClass: "text-emerald-600", icon: FileText, bg: "bg-blue-50", color: "text-blue-600" },
-    { label: "Downloads", value: "0", text: "Start downloading", textClass: "text-emerald-600", icon: Download, bg: "bg-indigo-50", color: "text-indigo-600" },
+    { label: "Downloads", value: totalDownloads.toString(), text: "Start downloading", textClass: "text-emerald-600", icon: Download, bg: "bg-indigo-50", color: "text-indigo-600" },
     { label: "Profile Completion", value: "100%", text: "All good", textClass: "text-amber-600", icon: CheckCircle2, bg: "bg-emerald-50", color: "text-emerald-600" },
     { label: "Active Applications", value: "0", text: "Keep applying", textClass: "text-emerald-600", icon: Activity, bg: "bg-purple-50", color: "text-purple-600" },
   ];

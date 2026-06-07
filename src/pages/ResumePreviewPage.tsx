@@ -4,7 +4,7 @@ import { Button } from "../components/ui/Button";
 import { motion } from "motion/react";
 import { ArrowLeft, Download, Printer, FileText, Loader2, FileDown } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
-import { getResume, ResumeData, defaultResumeData } from "../lib/resumeService";
+import { getResume, ResumeData, defaultResumeData, incrementDownloadCount } from "../lib/resumeService";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { ResumeRenderer } from "../components/ResumeRenderer";
@@ -72,6 +72,9 @@ export function ResumePreviewPage() {
       }
       
       pdf.save(`${resumeData.name.replace(/\s+/g, "_") || "Resume"}.pdf`);
+      if (currentUser && id) {
+        await incrementDownloadCount(currentUser.uid, id);
+      }
       Analytics.resumeDownloaded('pdf');
     } catch (error) {
       console.error("Error generating PDF", error);
@@ -85,6 +88,9 @@ export function ResumePreviewPage() {
     setDownloadingDocx(true);
     try {
       await generateDocx(resumeData, `${resumeData.name.replace(/\s+/g, "_") || "Resume"}.docx`);
+      if (currentUser && id) {
+        await incrementDownloadCount(currentUser.uid, id);
+      }
       Analytics.resumeDownloaded('docx');
     } catch(err) {
       console.error("Error downloading docx", err);

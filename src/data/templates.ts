@@ -88,5 +88,14 @@ export const templates = [
     renderType: "claude",
     description: "Precision-typeset layout inspired by professional document design.",
     features: ["Print-optimized", "High information density", "Typeset perfection"]
+  },
+  {
+    id: "classic",
+    name: "Classic",
+    type: "Traditional",
+    score: "97%",
+    renderType: "classic",
+    description: "Traditional serif layout with double-rule header. Timeless and ATS-friendly.",
+    features: ["Serif typography", "Double-rule header", "ATS optimized"]
   }
 ];

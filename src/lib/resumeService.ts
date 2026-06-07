@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, query, orderBy, Timestamp } from "firebase/firestore";
+import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, query, orderBy, Timestamp, increment } from "firebase/firestore";
 import { db, auth } from "./firebase";
 
 enum OperationType {
@@ -87,6 +87,7 @@ export interface ResumeDocument {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   completion: number;
+  downloadCount?: number;
 }
 
 export interface ActivityDocument {
@@ -234,4 +235,17 @@ export async function duplicateResume(userId: string, resumeId: string): Promise
   await setDoc(newRef, newResume);
   await logActivity(userId, "duplicated", newResume.title);
   return newRef.id;
+}
+
+export async function incrementDownloadCount(userId: string, resumeId: string): Promise<void> {
+  try {
+    const docRef = doc(db, "users", userId, "resumes", resumeId);
+    await setDoc(docRef,
+      { downloadCount: increment(1), updatedAt: Timestamp.now() },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error("Failed to track download", error);
+    // fail silently — don't block download
+  }
 }

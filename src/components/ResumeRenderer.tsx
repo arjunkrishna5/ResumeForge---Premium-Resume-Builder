@@ -85,6 +85,96 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
     );
   }
 
+  if (template === "executive") {
+    return (
+      <div className="p-[15mm] font-serif text-slate-900 bg-white min-h-full">
+        <header className="mb-6 pb-4 border-t-8 border-slate-900 border-b border-slate-300">
+          <div className="pt-4 flex justify-between items-end">
+            <div>
+              <h1 className="text-4xl font-bold text-slate-900 uppercase tracking-tight">{data.name || 'YOUR NAME'}</h1>
+              <h2 className="text-lg text-slate-600 mt-1 uppercase tracking-widest">{data.role || 'YOUR ROLE'}</h2>
+            </div>
+            <div className="text-right text-xs text-slate-500 font-sans leading-relaxed">
+              {data.email && <div>{data.email}</div>}
+              {data.phone && <div>{data.phone}</div>}
+              {data.location && <div>{data.location}</div>}
+              {data.linkedin && <div>{data.linkedin}</div>}
+              {data.portfolio && <div>{data.portfolio}</div>}
+            </div>
+          </div>
+        </header>
+
+        {data.summary && (
+          <section className="mb-6">
+            <p className="text-[13px] leading-relaxed text-slate-800 text-justify">{data.summary}</p>
+          </section>
+        )}
+
+        <div className="flex gap-8">
+          <div className="w-[30%] shrink-0">
+            {data.education.length > 0 && (
+              <section className="mb-6">
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-900 mb-3 pb-1 border-b border-slate-300">Education</h3>
+                <div className="space-y-4">
+                  {data.education.map(edu => (
+                    <div key={edu.id}>
+                      <h4 className="font-bold text-[13px] text-slate-900 leading-tight">{edu.degree}</h4>
+                      <div className="text-[12px] text-slate-600 mt-1">{edu.institution}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">{edu.startYear} - {edu.endYear}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {(data.technicalSkills.length > 0 || data.softSkills.length > 0) && (
+              <section className="mb-6">
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-900 mb-3 pb-1 border-b border-slate-300">Skills</h3>
+                <div className="text-[12px] text-slate-700 leading-relaxed font-sans">
+                  {[...data.technicalSkills, ...data.softSkills].join(', ')}
+                </div>
+              </section>
+            )}
+          </div>
+
+          <div className="w-[70%]">
+            {data.experience.length > 0 && (
+              <section className="mb-6">
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-900 mb-4 pb-1 border-b border-slate-300">Professional Experience</h3>
+                <div className="space-y-6">
+                  {data.experience.map(exp => (
+                    <div key={exp.id}>
+                      <div className="flex justify-between items-baseline mb-1">
+                        <h4 className="font-bold text-[14px] text-slate-900">{exp.company}</h4>
+                        <span className="text-[12px] text-slate-500 font-sans">{exp.startDate} - {exp.current ? 'Present' : exp.endDate}</span>
+                      </div>
+                      <div className="text-[13px] text-slate-700 font-bold mb-2">{exp.title}</div>
+                      <div className="text-[13px] leading-relaxed text-slate-700 whitespace-pre-wrap">{exp.description}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {data.projects.length > 0 && (
+              <section>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-900 mb-4 pb-1 border-b border-slate-300">Selected Projects</h3>
+                <div className="space-y-4">
+                  {data.projects.map(proj => (
+                    <div key={proj.id}>
+                      <h4 className="font-bold text-[13px] text-slate-900 mb-1">{proj.name}</h4>
+                      <div className="text-[13px] leading-relaxed text-slate-700 mb-1">{proj.description}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (template === "classic") {
     return (
       <div className="p-[20mm] font-serif text-black bg-white min-h-full">

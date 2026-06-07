@@ -165,5 +165,22 @@ export const TemplateRenders = {
         <div className="text-[2.5px] text-[#374151]">Technical: React, TypeScript</div>
       </div>
     </div>
+  ),
+  classic: () => (
+    <div className="w-full h-full bg-white border border-slate-200 flex flex-col p-3 text-[4px] leading-tight overflow-hidden pointer-events-none">
+      <div className="mb-2 text-center border-b-[1.5px] border-double border-slate-800 pb-1">
+        <div className="font-serif font-bold text-[6px] text-slate-900 uppercase">Name Surname</div>
+        <div className="font-serif italic text-slate-600 mt-0.5 text-[4px]">Professional Title</div>
+        <div className="text-[3px] text-slate-500 mt-0.5">info@email.com | Location</div>
+      </div>
+      <div className="mb-1.5">
+        <div className="font-bold text-[4px] uppercase border-b border-slate-800 pb-0.5 mb-1">Experience</div>
+        <div className="mb-1">
+          <div className="flex justify-between"><span className="font-bold">Role</span><span className="italic text-slate-500 text-[3px]">Date</span></div>
+          <div className="italic text-slate-600 mb-0.5">Company</div>
+          <div className="h-[1px] w-[90%] bg-slate-200 mt-0.5"></div>
+        </div>
+      </div>
+    </div>
   )
 };

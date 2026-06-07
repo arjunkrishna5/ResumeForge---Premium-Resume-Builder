@@ -12,6 +12,7 @@ import { Analytics } from "../lib/analytics";
 import { AuthContext } from "../contexts/AuthContext";
 import { getResume, saveResume, getUserResumes, ResumeData, defaultResumeData } from "../lib/resumeService";
 import { ResumeRenderer } from "../components/ResumeRenderer";
+import { templates } from "../data/templates";
 
 const genId = () => Math.random().toString(36).substring(7);
 
@@ -181,9 +182,8 @@ export function BuilderPage() {
       clearTimeout(saveTimeoutRef.current);
     }
     
-    setSaveStatus('saving');
-    
     saveTimeoutRef.current = setTimeout(async () => {
+      setSaveStatus('saving');
       try {
         const savedId = await saveResume(
           currentUser.uid,
@@ -277,9 +277,21 @@ export function BuilderPage() {
   // Reset ATS score flag on significant changes
   useEffect(() => {
     hasCalculatedATS.current = false;
-  }, [formData.name, formData.role, formData.experience, formData.education, formData.technicalSkills, formData.projects]);
+  }, [
+    formData.name,
+    formData.role,
+    formData.experience.length,
+    formData.education.length,
+    formData.technicalSkills.length,
+    formData.projects.length,
+    formData.summary
+  ]);
+
+  const formDataRef = useRef(formData);
+  useEffect(() => { formDataRef.current = formData; }, [formData]);
 
   const handleCalculateATS = useCallback(async () => {
+    const data = formDataRef.current;
     setIsCalculatingATS(true);
     try {
       const res = await fetch('/api/gemini', {
@@ -287,17 +299,17 @@ export function BuilderPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'calculateATSScore',
-          ...formData
+          ...data
         })
       });
-      const data = await res.json();
-      if (data.atsData) setAtsScore(data.atsData);
+      const result = await res.json();
+      if (result.atsData) setAtsScore(result.atsData);
     } catch (err) {
       console.error('ATS calculation failed:', err);
     } finally {
       setIsCalculatingATS(false);
     }
-  }, [formData]);
+  }, []);
 
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
   const [lastInProgressResume, setLastInProgressResume] = useState<any>(null);
@@ -333,11 +345,11 @@ export function BuilderPage() {
 
   // Recalculate ATS score when advancing to the last step (Step 6 or 7)
   useEffect(() => {
-    if ((currentStep === 5 || currentStep === 6) && formData.name && !hasCalculatedATS.current) {
-       handleCalculateATS();
+    if ((currentStep === 5 || currentStep === 6) && formDataRef.current.name && !hasCalculatedATS.current) {
        hasCalculatedATS.current = true;
+       handleCalculateATS();
     }
-  }, [currentStep, handleCalculateATS, formData.name]);
+  }, [currentStep, handleCalculateATS]);
 
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -923,10 +935,9 @@ export function BuilderPage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Template:</span>
                 <select value={selectedTemplate} onChange={e => setSelectedTemplate(e.target.value)} className="bg-white border border-slate-200 text-sm font-bold text-navy py-1.5 px-3 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-primary/10">
-                  <option value="modern">Modern</option>
-                  <option value="minimal">Minimal</option>
-                  <option value="classic">Classic</option>
-                  <option value="creative">Creative</option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.renderType}>{t.name}</option>
+                  ))}
                 </select>
               </div>
             )}
@@ -1075,10 +1086,9 @@ export function BuilderPage() {
             {previewTab === 'resume' && (
               <div className="bg-white border-b border-slate-200 px-4 py-2 shrink-0">
                 <select value={selectedTemplate} onChange={e => setSelectedTemplate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 text-sm font-bold text-navy py-2 px-3 rounded-lg focus:outline-none">
-                  <option value="modern">Modern Template</option>
-                  <option value="minimal">Minimal Template</option>
-                  <option value="classic">Classic Template</option>
-                  <option value="creative">Creative Template</option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.renderType}>{t.name}</option>
+                  ))}
                 </select>
               </div>
             )}
