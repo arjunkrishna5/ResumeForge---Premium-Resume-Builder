@@ -56,7 +56,6 @@ export function BuilderPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialLoadRef = useRef(true);
-  const isFirstRender = useRef(true);
   
   // Read template from router state or default to "modern"
   const templateFromState = (location.state as any)?.templateId || "modern";
@@ -64,10 +63,11 @@ export function BuilderPage() {
   const [previewTab, setPreviewTab] = useState<"resume" | "cover">("resume");
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const previewContainerRef = useRef<HTMLDivElement>(null);
+  const mobilePreviewContainerRef = useRef<HTMLDivElement>(null);
   const [previewScale, setPreviewScale] = useState(1);
   const [mobilePreviewScale, setMobilePreviewScale] = useState(0.8);
 
-  // ResizeObserver for dynamic scaling
+  // ResizeObserver for dynamic scaling (Desktop)
   useEffect(() => {
     const container = previewContainerRef.current;
     if (!container) return;
@@ -88,6 +88,26 @@ export function BuilderPage() {
     observer.observe(container);
     return () => observer.disconnect();
   }, [mobilePreviewOpen]); // re-run if modal opens
+
+  // ResizeObserver for dynamic scaling (Mobile)
+  useEffect(() => {
+    const container = mobilePreviewContainerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { height, width } = entry.contentRect;
+        const docHeight = 1123; 
+        const docWidth = 794;
+        
+        const scaleHeight = (height * 0.85) / docHeight;
+        const scaleWidth = (width * 0.90) / docWidth;
+        setMobilePreviewScale(Math.min(scaleHeight, scaleWidth));
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [mobilePreviewOpen]);
 
   // Date mask function: forces MM/YYYY format
   const maskDate = (value: string): string => {
@@ -168,7 +188,8 @@ export function BuilderPage() {
         const savedId = await saveResume(
           currentUser.uid,
           currentResumeId || null,
-          formData
+          formData,
+          selectedTemplate
         );
         if (!currentResumeId) {
           setCurrentResumeId(savedId);
@@ -192,13 +213,13 @@ export function BuilderPage() {
     };
   }, [formData, selectedTemplate, currentUser, currentResumeId]);
 
-  const [isSaving, setIsSaving] = useState(false);
+
 
   const manuallySaveAndFinish = async () => {
     if (!currentUser) return;
     try {
       setSaveStatus("saving");
-      const savedId = await saveResume(currentUser.uid, currentResumeId, formData);
+      const savedId = await saveResume(currentUser.uid, currentResumeId, formData, selectedTemplate);
       Analytics.resumeCreated(selectedTemplate, formData.userType || "professional");
       navigate(`/preview/${savedId || currentResumeId}`);
     } catch (e) {
@@ -209,19 +230,19 @@ export function BuilderPage() {
 
   const handleSkipToDownload = async () => {
     if (!currentUser) return;
-    setIsSaving(true);
+    setSaveStatus("saving");
     try {
       const savedId = await saveResume(
         currentUser.uid,
         currentResumeId || null,
-        formData
+        formData,
+        selectedTemplate
       );
       navigate(`/preview/${savedId}`);
     } catch (err) {
       console.error('Save failed:', err);
       showError('Failed to save. Please try again.');
-    } finally {
-      setIsSaving(false);
+      setSaveStatus("error");
     }
   };
 
@@ -251,7 +272,14 @@ export function BuilderPage() {
   } | null>(null);
   const [isCalculatingATS, setIsCalculatingATS] = useState(false);
 
-  const handleCalculateATS = async () => {
+  const hasCalculatedATS = useRef(false);
+
+  // Reset ATS score flag on significant changes
+  useEffect(() => {
+    hasCalculatedATS.current = false;
+  }, [formData.name, formData.role, formData.experience, formData.education, formData.technicalSkills, formData.projects]);
+
+  const handleCalculateATS = useCallback(async () => {
     setIsCalculatingATS(true);
     try {
       const res = await fetch('/api/gemini', {
@@ -269,7 +297,7 @@ export function BuilderPage() {
     } finally {
       setIsCalculatingATS(false);
     }
-  };
+  }, [formData]);
 
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
   const [lastInProgressResume, setLastInProgressResume] = useState<any>(null);
@@ -305,10 +333,11 @@ export function BuilderPage() {
 
   // Recalculate ATS score when advancing to the last step (Step 6 or 7)
   useEffect(() => {
-    if ((currentStep === 5 || currentStep === 6) && formData.name) {
+    if ((currentStep === 5 || currentStep === 6) && formData.name && !hasCalculatedATS.current) {
        handleCalculateATS();
+       hasCalculatedATS.current = true;
     }
-  }, [currentStep]);
+  }, [currentStep, handleCalculateATS, formData.name]);
 
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -866,8 +895,8 @@ export function BuilderPage() {
           
           {currentStep === activeSteps.length - 2 ? (
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleSkipToDownload} className="px-6 font-bold text-primary border-primary hover:bg-primary/5" disabled={isSaving}>
-                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Skip to Download
+              <Button variant="outline" onClick={handleSkipToDownload} className="px-6 font-bold text-primary border-primary hover:bg-primary/5" disabled={saveStatus === "saving"}>
+                {saveStatus === "saving" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Skip to Download
               </Button>
               <Button onClick={() => setCurrentStep(p => p + 1)} className="px-6 font-bold shadow-[0_4px_12px_rgba(99,102,241,0.2)]">
                 Add Cover Letter <ChevronRight className="h-4 w-4 ml-2" />
@@ -1054,9 +1083,9 @@ export function BuilderPage() {
               </div>
             )}
             
-            <div className="flex-1 overflow-hidden flex items-center justify-center p-4 relative" ref={previewContainerRef}>
+            <div className="flex-1 overflow-hidden flex items-center justify-center p-4 relative" ref={mobilePreviewContainerRef}>
                <div className="mx-auto bg-white shadow-2xl shadow-slate-300 shrink-0 transform-gpu origin-center overflow-hidden pointer-events-none flex flex-col relative"
-                    style={{ width: '794px', minHeight: '1123px', transform: `scale(${previewScale})` }}
+                    style={{ width: '794px', minHeight: '1123px', transform: `scale(${mobilePreviewScale})` }}
                >
                   {previewTab === 'resume' ? (
                     <>

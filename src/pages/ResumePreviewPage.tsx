@@ -48,10 +48,29 @@ export function ResumePreviewPage() {
       const canvas = await html2canvas(printArea, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfPageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Calculate how much of the canvas corresponds to one PDF page
+      const canvasPageHeight = (canvas.width / pdfWidth) * pdfPageHeight;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      // First page
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfPageHeight;
+      
+      // Add new pages until the content ends
+      while (heightLeft > 0) {
+        position = position - pdfPageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfPageHeight;
+      }
+      
       pdf.save(`${resumeData.name.replace(/\s+/g, "_") || "Resume"}.pdf`);
       Analytics.resumeDownloaded('pdf');
     } catch (error) {
@@ -80,8 +99,25 @@ export function ResumePreviewPage() {
 
   if (loading) {
      return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-900 font-sans">
-           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex min-h-screen flex-col bg-slate-900 font-sans">
+           <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-6 py-4 backdrop-blur-xl">
+              <div className="flex items-center gap-4">
+                 <div className="h-9 w-32 bg-slate-800 rounded animate-pulse" />
+              </div>
+           </header>
+           <main className="flex-1 overflow-y-auto p-8 sm:p-12 lg:p-16 flex justify-center items-start">
+              <div className="w-[210mm] min-h-[297mm] bg-slate-800/50 rounded animate-pulse shadow-2xl flex flex-col p-12 space-y-6">
+                 <div className="w-1/3 h-10 bg-slate-700/50 rounded mx-auto mb-4" />
+                 <div className="w-full h-4 bg-slate-700/50 rounded" />
+                 <div className="w-5/6 h-4 bg-slate-700/50 rounded" />
+                 <div className="w-4/6 h-4 bg-slate-700/50 rounded" />
+                 <div className="mt-8 space-y-4">
+                    <div className="w-1/4 h-6 bg-slate-700/50 rounded" />
+                    <div className="w-full h-24 bg-slate-700/50 rounded" />
+                    <div className="w-full h-24 bg-slate-700/50 rounded" />
+                 </div>
+              </div>
+           </main>
         </div>
      );
   }
