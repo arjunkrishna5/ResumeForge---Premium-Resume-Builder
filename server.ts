@@ -3,7 +3,6 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import multer from "multer";
-import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 
 async function startServer() {
@@ -41,9 +40,10 @@ async function startServer() {
       
       let text = "";
       if (originalname.endsWith('.pdf') || req.file.mimetype === 'application/pdf') {
-        const parser = new PDFParse({ data: fileBuffer });
-        const data = await parser.getText();
-        text = data.text;
+        const pdfParseModule = await import('pdf-parse');
+        const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+        const result = await pdfParse(fileBuffer);
+        text = result.text;
       } else if (originalname.endsWith('.docx') || req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         const result = await mammoth.extractRawText({ buffer: fileBuffer });
         text = result.value;
@@ -58,121 +58,113 @@ async function startServer() {
     }
   });
 
-  app.post("/api/improveJobDescription", async (req, res) => {
+  app.post("/api/gemini", async (req, res) => {
     try {
       const aiClient = initAi();
-      const { description } = req.body;
-      const response = await aiClient.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: `Rewrite this job description as 3 strong resume bullet points using action verbs and quantifiable metrics. Return only the bullet points with a dash prefix, no extra text: ${description}`
-      });
-      res.json({ text: response.text ?? "" });
-    } catch (e: any) {
-      let errorMsg = e.message || 'An error occurred';
-      if (errorMsg.includes('429') || errorMsg.includes('Quota')) {
-        errorMsg = 'AI rate limit exceeded. Please wait a moment and try again.';
-      } else {
-        console.error(e);
-      }
-      res.status(500).json({ error: errorMsg });
-    }
-  });
+      const { action, ...params } = req.body;
+      let result = '';
 
-  app.post("/api/suggestSkills", async (req, res) => {
-    try {
-      const aiClient = initAi();
-      const { jobTitle } = req.body;
-      const response = await aiClient.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: `List 8 key technical and soft skills for a ${jobTitle} role. Return only a comma-separated list, nothing else.`
-      });
-      const skills = (response.text ?? "").split(",").map(s => s.trim()).filter(Boolean);
-      res.json({ skills: skills });
-    } catch (e: any) {
-      let errorMsg = e.message || 'An error occurred';
-      if (errorMsg.includes('429') || errorMsg.includes('Quota')) {
-        errorMsg = 'AI rate limit exceeded. Please wait a moment and try again.';
-      } else {
-        console.error(e);
-      }
-      res.status(500).json({ error: errorMsg });
-    }
-  });
+      if (action === 'improveJobDescription') {
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: `Rewrite this job description as 3 strong resume bullet points using action verbs and quantifiable metrics. Return only the bullet points with a dash prefix, no extra text: ${params.description}`
+        });
+        result = response.text ?? '';
 
-  app.post("/api/generateSummary", async (req, res) => {
-    try {
-      const aiClient = initAi();
-      const data = req.body;
-      const expText = data.experience.length > 0
-        ? `${data.experience[0].title} at ${data.experience[0].company}`
-        : "various roles";
-      const skillsText = data.skills.slice(0, 5).join(", ");
-      
-      const response = await aiClient.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: `Write a 3-sentence professional summary for a resume. Name: ${data.name}, Role: ${data.role}, Experience: ${expText}, Skills: ${skillsText}. Make it impactful, confident, and ATS-friendly. Return only the summary paragraph, no labels or extra text.`
-      });
-      res.json({ text: response.text ?? "" });
-    } catch (e: any) {
-      let errorMsg = e.message || 'An error occurred';
-      if (errorMsg.includes('429') || errorMsg.includes('Quota')) {
-        errorMsg = 'AI rate limit exceeded. Please wait a moment and try again.';
-      } else {
-        console.error(e);
-      }
-      res.status(500).json({ error: errorMsg });
-    }
-  });
+      } else if (action === 'suggestSkills') {
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: `List 8 key technical and soft skills for a ${params.jobTitle} role. Return only a comma-separated list, nothing else.`
+        });
+        const skills = (response.text ?? '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+        return res.json({ skills });
 
-  app.post("/api/parseResume", async (req, res) => {
-    try {
-      const aiClient = initAi();
-      const { text } = req.body;
-      const response = await aiClient.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: `Extract resume information from this text and return ONLY a valid JSON object with this exact structure, no markdown, no explanation:
+      } else if (action === 'generateSummary') {
+        const expText = params.experience?.length > 0
+          ? `${params.experience[0].title} at ${params.experience[0].company}`
+          : 'various roles';
+        const skillsText = params.technicalSkills?.slice(0, 5).join(', ') || '';
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: `Write a 3-sentence professional summary for a resume. Name: ${params.name}, Role: ${params.role}, Experience: ${expText}, Skills: ${skillsText}. Make it impactful and ATS-friendly. Return only the summary paragraph.`
+        });
+        result = response.text ?? '';
+
+      } else if (action === 'generateCoverLetter') {
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: `Write a professional cover letter for ${params.name} applying for ${params.jobTitle} at ${params.company}. Tone: ${params.tone}. Summary context: ${params.summary}. Skills: ${params.skills?.join(', ')}. Keep it to 3 paragraphs under 300 words. Return only the letter body.`
+        });
+        result = response.text ?? '';
+
+      } else if (action === 'parseResume') {
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: `Extract resume information from this text and return ONLY a valid JSON object, no markdown:
 {name, role, email, phone, location, linkedin, portfolio, summary, experience: [{title, company, startDate, endDate, current, description}], education: [{institution, degree, field, startYear, endYear, grade}], technicalSkills: [string], softSkills: [string], projects: [{name, description, techStack: [string], liveUrl, githubUrl}]}
+Resume text: ${params.text}`
+        });
+        try {
+          const cleaned = (response.text ?? '')
+            .replace(/```json/g, '').replace(/```/g, '').trim();
+          return res.json({ data: JSON.parse(cleaned) });
+        } catch {
+          return res.status(400).json({
+            error: 'Could not parse resume data'
+          });
+        }
 
-Input text:
-${text}`
-      });
-      let jsonText = (response.text ?? "").trim();
-      // Remove possible markdown formatting for JSON
-      if (jsonText.startsWith("```json")) {
-        jsonText = jsonText.replace(/^```json/, "").replace(/```$/, "").trim();
-      } else if (jsonText.startsWith("```")) {
-         jsonText = jsonText.replace(/^```/, "").replace(/```$/, "").trim();
-      }
-      const data = JSON.parse(jsonText);
-      res.json(data);
-    } catch (e: any) {
-      let errorMsg = e.message || 'An error occurred';
-      if (errorMsg.includes('429') || errorMsg.includes('Quota')) {
-        errorMsg = 'AI rate limit exceeded. Please wait a moment and try again.';
-      } else {
-        console.error(e);
-      }
-      res.status(500).json({ error: errorMsg });
-    }
-  });
+      } else if (action === 'calculateATSScore') {
+        const resumeText = `
+          Name: ${params.name}, Role: ${params.role}
+          Summary: ${params.summary}
+          Experience: ${params.experience?.map((e: any) =>
+            `${e.title} at ${e.company}: ${e.description}`
+          ).join('\n')}
+          Skills: ${[
+            ...(params.technicalSkills || []),
+            ...(params.softSkills || [])
+          ].join(', ')}
+          Education: ${params.education?.map((e: any) =>
+            `${e.degree} from ${e.institution}`
+          ).join('\n')}
+        `;
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: `Analyze this resume for ATS compatibility and return ONLY a JSON object (no markdown):
+{"score":<0-100>,"grade":<"A"|"B"|"C"|"D">,"issues":[<up to 4 strings>],"suggestions":[<up to 3 strings>]}
+Resume: ${resumeText}`
+        });
+        try {
+          const cleaned = (response.text ?? '')
+            .replace(/```json/g, '').replace(/```/g, '').trim();
+          return res.json({ atsData: JSON.parse(cleaned) });
+        } catch {
+          return res.json({
+            atsData: { score: 70, grade: 'B', issues: [], suggestions: [] }
+          });
+        }
 
-  app.post("/api/generateCoverLetter", async (req, res) => {
-    try {
-      const aiClient = initAi();
-      const { name, jobTitle, company, tone, summary, skills } = req.body;
-      const response = await aiClient.models.generateContent({
-         model: "gemini-3.5-flash",
-         contents: `Write a professional cover letter for ${name} applying for ${jobTitle} at ${company}. Tone: ${tone}. Use this resume summary as context: ${summary}. Skills: ${skills.join(", ")}. Keep it to 3 paragraphs, under 300 words. Return only the letter body, no subject line, no date, no address.`
-      });
-      res.json({ text: response.text ?? "" });
-    } catch (e: any) {
-      let errorMsg = e.message || 'An error occurred';
-      if (errorMsg.includes('429') || errorMsg.includes('Quota')) {
-        errorMsg = 'AI rate limit exceeded. Please wait a moment and try again.';
       } else {
-        console.error(e);
+        return res.status(400).json({ error: 'Unknown action' });
       }
-      res.status(500).json({ error: errorMsg });
+
+      return res.json({ text: result });
+
+    } catch (error: any) {
+      console.error('Gemini error:', error);
+      if (error.message?.includes('429') ||
+          error.message?.includes('quota') || error.message?.includes('Quota')) {
+        return res.status(429).json({
+          error: 'AI rate limit exceeded. Please wait and try again.'
+        });
+      }
+      return res.status(500).json({
+        error: error.message || 'AI request failed'
+      });
     }
   });
 
