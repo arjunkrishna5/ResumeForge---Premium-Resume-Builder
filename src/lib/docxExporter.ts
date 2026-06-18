@@ -8,20 +8,20 @@ export async function generateDocx(data: ResumeData, fileName: string): Promise<
       children: [
         // Name as large heading
         new Paragraph({
-          text: data.name,
+          text: data.name || '',
           heading: HeadingLevel.HEADING_1,
           alignment: AlignmentType.CENTER
         }),
         // Role
         new Paragraph({
-          text: data.role,
+          text: data.role || '',
           alignment: AlignmentType.CENTER
         }),
         // Contact line
         new Paragraph({
           children: [
             new TextRun({
-              text: [data.email, data.phone, data.location].filter(Boolean).join(' • ')
+              text: [data.email, data.phone, data.location].filter(Boolean).join(' • ') || 'Contact Information'
             })
           ],
           alignment: AlignmentType.CENTER
@@ -29,7 +29,7 @@ export async function generateDocx(data: ResumeData, fileName: string): Promise<
         // Summary
         ...(data.summary ? [
           new Paragraph({ text: 'Summary', heading: HeadingLevel.HEADING_2 }),
-          new Paragraph({ text: data.summary })
+          new Paragraph({ text: data.summary || '' })
         ] : []),
         // Experience section
         ...(data.experience && data.experience.length > 0 ? [
@@ -37,14 +37,14 @@ export async function generateDocx(data: ResumeData, fileName: string): Promise<
           ...data.experience.flatMap(exp => [
             new Paragraph({
               children: [
-                new TextRun({ text: exp.title, bold: true }),
-                new TextRun({ text: ` — ${exp.company}` })
+                new TextRun({ text: exp.title || '', bold: true }),
+                new TextRun({ text: exp.company ? ` — ${exp.company}` : '' })
               ]
             }),
             new Paragraph({
-              text: `${exp.startDate} - ${exp.current ? 'Present' : exp.endDate}`
+              text: `${exp.startDate || ''} - ${exp.current ? 'Present' : (exp.endDate || '')}`
             }),
-            new Paragraph({ text: exp.description })
+            ...(exp.description ? [new Paragraph({ text: exp.description })] : [])
           ])
         ] : []),
         // Skills
@@ -60,8 +60,8 @@ export async function generateDocx(data: ResumeData, fileName: string): Promise<
           ...data.education.map(edu =>
             new Paragraph({
               children: [
-                new TextRun({ text: edu.institution, bold: true }),
-                new TextRun({ text: ` — ${edu.degree} in ${edu.field}` })
+                new TextRun({ text: edu.institution || '', bold: true }),
+                new TextRun({ text: (edu.degree || edu.field) ? ` — ${edu.degree || ''} in ${edu.field || ''}` : '' })
               ]
             })
           )
@@ -71,9 +71,9 @@ export async function generateDocx(data: ResumeData, fileName: string): Promise<
           new Paragraph({ text: 'Projects', heading: HeadingLevel.HEADING_2 }),
           ...data.projects.flatMap(proj => [
             new Paragraph({
-              children: [new TextRun({ text: proj.name, bold: true })]
+              children: [new TextRun({ text: proj.name || '', bold: true })]
             }),
-            new Paragraph({ text: proj.description })
+            ...(proj.description ? [new Paragraph({ text: proj.description })] : [])
           ])
         ] : [])
       ]

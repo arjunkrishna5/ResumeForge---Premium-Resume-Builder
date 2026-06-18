@@ -133,12 +133,17 @@ export function BuilderPage() {
     return value.replace(/\D/g, '').slice(0, 4);
   };
 
+  const [showRuleBasedNotice, setShowRuleBasedNotice] = useState(false);
+
   // Load existing resume or handle imported Data
   useEffect(() => {
     async function loadData() {
       // Check importedData first
       if (location.state?.importedData) {
         setRawFormData(location.state.importedData);
+        if (location.state.importedData.isRuleBased) {
+          setShowRuleBasedNotice(true);
+        }
         window.history.replaceState({}, document.title);
         isInitialLoadRef.current = false;
         return;
@@ -215,34 +220,48 @@ export function BuilderPage() {
 
 
 
+  const [isSavingAndSkipping, setIsSavingAndSkipping] = useState(false);
+  const [isSavingAndFinishing, setIsSavingAndFinishing] = useState(false);
+
   const manuallySaveAndFinish = async () => {
     if (!currentUser) return;
+    setIsSavingAndFinishing(true);
     try {
-      setSaveStatus("saving");
-      const savedId = await saveResume(currentUser.uid, currentResumeId, formData, selectedTemplate);
+      const savePromise = saveResume(currentUser.uid, currentResumeId, formData, selectedTemplate);
+      const timeoutPromise = new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error('Save operation timed out. Please try again.')), 8000)
+      );
+      const savedId = await Promise.race([savePromise, timeoutPromise]);
       Analytics.resumeCreated(selectedTemplate, formData.userType || "professional");
       navigate(`/preview/${savedId || currentResumeId}`);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      showError("Failed to save and finish.");
+      showError(e.message || "Failed to save and finish.");
+    } finally {
+      setIsSavingAndFinishing(false);
     }
   };
 
   const handleSkipToDownload = async () => {
     if (!currentUser) return;
-    setSaveStatus("saving");
+    setIsSavingAndSkipping(true);
     try {
-      const savedId = await saveResume(
+      const savePromise = saveResume(
         currentUser.uid,
         currentResumeId || null,
         formData,
         selectedTemplate
       );
-      navigate(`/preview/${savedId}`);
-    } catch (err) {
+      const timeoutPromise = new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error('Save operation timed out. Please try again.')), 8000)
+      );
+      const savedId = await Promise.race([savePromise, timeoutPromise]);
+      navigate(`/preview/${savedId || currentResumeId}`);
+    } catch (err: any) {
       console.error('Save failed:', err);
-      showError('Failed to save. Please try again.');
-      setSaveStatus("error");
+      showError(err.message || 'Failed to save. Please try again.');
+    } finally {
+      setIsSavingAndSkipping(false);
     }
   };
 
@@ -477,6 +496,27 @@ export function BuilderPage() {
                 Continue →
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Rule-based Import Banner */}
+        {showRuleBasedNotice && (
+          <div className="mx-6 mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 relative animate-in fade-in duration-200">
+            <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 pr-6">
+              <p className="text-sm font-semibold text-amber-900 font-display">
+                Imported using backup parser
+              </p>
+              <p className="text-xs text-amber-700 mt-0.5 leading-relaxed font-medium">
+                The AI service was temporarily busy. We've extracted your information using our backup rule-based engine. Please verify the fields to ensure all details are correct.
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowRuleBasedNotice(false)}
+              className="absolute top-3 right-3 p-1 text-amber-500 hover:text-amber-700 hover:bg-amber-100 rounded-full transition-all cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         )}
 
@@ -905,17 +945,19 @@ export function BuilderPage() {
         <div className="p-4 sm:p-6 border-t border-slate-200 bg-white flex items-center justify-between shrink-0">
           <Button variant="outline" onClick={() => setCurrentStep(p => p - 1)} disabled={currentStep === 0} className="border-slate-200 px-6 font-bold text-slate-600"><ChevronLeft className="h-4 w-4 mr-2" /> Back</Button>
           
-          {currentStep === activeSteps.length - 2 ? (
+          {currentStepId === 'summary' ? (
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleSkipToDownload} className="px-6 font-bold text-primary border-primary hover:bg-primary/5" disabled={saveStatus === "saving"}>
-                {saveStatus === "saving" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Skip to Download
+              <Button variant="outline" onClick={handleSkipToDownload} className="px-6 font-bold text-primary border-primary hover:bg-primary/5" disabled={isSavingAndSkipping}>
+                {isSavingAndSkipping ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Skip to Download
               </Button>
               <Button onClick={() => setCurrentStep(p => p + 1)} className="px-6 font-bold shadow-[0_4px_12px_rgba(99,102,241,0.2)]">
                 Add Cover Letter <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
-          ) : currentStep === activeSteps.length - 1 ? (
-             <Button onClick={manuallySaveAndFinish} className="px-6 font-bold shadow-[0_4px_12px_rgba(99,102,241,0.2)]" disabled={saveStatus === "saving"}><Sparkles className="h-4 w-4 mr-2" /> {saveStatus === "saving" ? 'Saving...' : 'Finish & Download'}</Button>
+          ) : currentStepId === 'cover' ? (
+             <Button onClick={manuallySaveAndFinish} className="px-6 font-bold shadow-[0_4px_12px_rgba(99,102,241,0.2)]" disabled={isSavingAndFinishing}>
+               {isSavingAndFinishing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />} {isSavingAndFinishing ? 'Saving...' : 'Finish & Download'}
+             </Button>
           ) : (
              <Button onClick={() => setCurrentStep(p => p + 1)} className="px-6 font-bold shadow-[0_4px_12px_rgba(99,102,241,0.2)]">Next Step <ChevronRight className="h-4 w-4 ml-2" /></Button>
           )}

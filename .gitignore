@@ -9,3 +9,7 @@ firebase-applet-config.json
 .DS_Store
 coverage/
 build/
+.venv/
+__pycache__/
+*.pyc
+

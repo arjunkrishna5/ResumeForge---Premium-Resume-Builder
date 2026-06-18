@@ -90,11 +90,19 @@ export default async function handler(
       (fileBuffer[0] === 0x50 && fileBuffer[1] === 0x4B);
 
     if (isPdf) {
+      if (typeof globalThis.DOMMatrix === 'undefined') {
+        (globalThis as any).DOMMatrix = class DOMMatrix {};
+      }
       const pdfParseModule = await import('pdf-parse');
-      const pdfParse = (pdfParseModule as any).default 
-        || pdfParseModule;
-      const result = await pdfParse(fileBuffer);
-      extractedText = result.text;
+      if (typeof pdfParseModule.PDFParse === 'function') {
+        const parser = new pdfParseModule.PDFParse({ data: fileBuffer });
+        const result = await parser.getText();
+        extractedText = result.text;
+      } else {
+        const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+        const result = await pdfParse(fileBuffer);
+        extractedText = result.text;
+      }
     } else if (isDocx) {
       const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ 

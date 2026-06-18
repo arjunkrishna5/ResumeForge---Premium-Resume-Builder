@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { motion } from "motion/react";
-import { ArrowLeft, Download, Printer, FileText, Loader2, FileDown } from "lucide-react";
+import { ArrowLeft, Download, Printer, FileText, Loader2, FileDown, AlertCircle, X } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { getResume, ResumeData, defaultResumeData, incrementDownloadCount } from "../lib/resumeService";
 import jsPDF from "jspdf";
@@ -20,6 +20,7 @@ export function ResumePreviewPage() {
   const [loading, setLoading] = useState(true);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -44,6 +45,7 @@ export function ResumePreviewPage() {
     if (!printArea || !resumeData) return;
 
     setDownloadingPdf(true);
+    setDownloadError(null);
     try {
       const canvas = await html2canvas(printArea, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL("image/png");
@@ -76,8 +78,9 @@ export function ResumePreviewPage() {
         await incrementDownloadCount(currentUser.uid, id);
       }
       Analytics.resumeDownloaded('pdf');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating PDF", error);
+      setDownloadError("Failed to generate PDF. You can also try printing directly to PDF using your browser's Print dialog.");
     } finally {
       setDownloadingPdf(false);
     }
@@ -86,14 +89,16 @@ export function ResumePreviewPage() {
   const handleDownloadDOCX = async () => {
     if (!resumeData) return;
     setDownloadingDocx(true);
+    setDownloadError(null);
     try {
       await generateDocx(resumeData, `${resumeData.name.replace(/\s+/g, "_") || "Resume"}.docx`);
       if (currentUser && id) {
         await incrementDownloadCount(currentUser.uid, id);
       }
       Analytics.resumeDownloaded('docx');
-    } catch(err) {
+    } catch(err: any) {
       console.error("Error downloading docx", err);
+      setDownloadError("Failed to generate DOCX file: " + (err.message || String(err)));
     } finally {
       setDownloadingDocx(false);
     }
@@ -169,6 +174,23 @@ export function ResumePreviewPage() {
           </Button>
         </div>
       </header>
+
+      {/* Download Error Alert */}
+      {downloadError && (
+        <div className="mx-6 mt-4 p-4 bg-red-950/80 border border-red-500/30 rounded-xl flex items-start gap-3 text-white print:hidden animate-in fade-in duration-200">
+          <AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-red-200">Download Failed</p>
+            <p className="text-xs text-red-300/80 mt-0.5 leading-relaxed">{downloadError}</p>
+          </div>
+          <button 
+            onClick={() => setDownloadError(null)} 
+            className="p-1 text-red-400 hover:text-red-200 hover:bg-red-800/30 rounded-full transition-all cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Canvas Area */}
       <main className="flex-1 overflow-y-auto p-8 sm:p-12 lg:p-16 flex justify-center print:p-0 print:m-0 print:h-full print:w-full">
