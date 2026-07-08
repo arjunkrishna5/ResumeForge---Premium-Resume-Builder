@@ -1,9 +1,11 @@
 # ResumeForge 🛠️ ✨
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-vercel-blueviolet?style=for-the-badge)](https://resume-forge-premium-resume-builder.vercel.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
 **ResumeForge** is a premium, AI-powered resume and CV builder designed to help job seekers craft professional, ATS-friendly resumes in minutes. Featuring a dynamic layout engine, real-time print-scaling preview, and intelligent writing assistance, it translates your career history into a compelling narrative.
+
+**Live URL**: [https://resume-forge-premium-resume-builder.vercel.app](https://resume-forge-premium-resume-builder.vercel.app)
 
 ---
 
@@ -70,4 +72,4 @@ Open **`http://localhost:3000`** in your browser.
 - **Production Deployment**: See [DEPLOYMENT.md](file:///c:/Users/ARJUN%20KRISHNA/Desktop/ResumeForge/DEPLOYMENT.md) for deploying to Vercel.
 
 ## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [MIT License Details](https://opensource.org/licenses/MIT) for more information.
