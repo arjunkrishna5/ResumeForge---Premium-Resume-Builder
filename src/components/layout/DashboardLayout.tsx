@@ -1,8 +1,8 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, LogOut, Plus, Sparkles, User, Search, Home, Edit3, Bell, Menu, X } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, LogOut, Plus, Sparkles, User, Search, Home, Edit3, Bell, Menu, X, PanelLeftOpen, PanelLeftClose } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 
 export function DashboardLayout() {
@@ -10,6 +10,11 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const { currentUser, signOut } = useContext(AuthContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(location.pathname.startsWith("/builder"));
+
+  useEffect(() => {
+    setIsSidebarCollapsed(location.pathname.startsWith("/builder"));
+  }, [location.pathname]);
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -111,57 +116,62 @@ export function DashboardLayout() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar - Fixed 240px */}
-      <aside className="hidden w-[240px] flex-col border-r border-slate-200 bg-white md:flex flex-shrink-0 z-20">
-        <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-200">
-          <Link to="/dashboard" className="flex items-center gap-2 group cursor-pointer">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-navy text-white transition-transform group-hover:scale-105 group-hover:rotate-3">
-              <Sparkles className="h-3.5 w-3.5" />
-            </div>
-            <span className="font-display text-lg font-bold tracking-tight text-navy">
-              ResumeForge
-            </span>
-          </Link>
-        </div>
-        
-        <div className="flex-1 p-4 overflow-y-auto">
-          <Link to="/builder" className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm hover:shadow-[0_4px_12px_rgba(99,102,241,0.2)] hover:-translate-y-[1px] transition-all duration-200 mb-6 cursor-pointer">
-            <Plus className="h-4 w-4" />
-            New Resume
-          </Link>
+      {/* Sidebar - Collapsible desktop sidebar */}
+      <aside className={cn(
+        "hidden md:flex flex-col bg-white flex-shrink-0 z-20 transition-all duration-300 ease-in-out overflow-hidden",
+        isSidebarCollapsed ? "w-0 border-r-0" : "w-[240px] border-r border-slate-200"
+      )}>
+        <div className="w-[240px] h-full flex flex-col flex-shrink-0">
+          <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-200">
+            <Link to="/dashboard" className="flex items-center gap-2 group cursor-pointer">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-navy text-white transition-transform group-hover:scale-105 group-hover:rotate-3">
+                <Sparkles className="h-3.5 w-3.5" />
+              </div>
+              <span className="font-display text-lg font-bold tracking-tight text-navy">
+                ResumeForge
+              </span>
+            </Link>
+          </div>
+          
+          <div className="flex-1 p-4 overflow-y-auto">
+            <Link to="/builder" className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm hover:shadow-[0_4px_12px_rgba(99,102,241,0.2)] hover:-translate-y-[1px] transition-all duration-200 mb-6 cursor-pointer">
+              <Plus className="h-4 w-4" />
+              New Resume
+            </Link>
 
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              let isActive = false;
-              if (item.name === "Dashboard" && location.pathname === "/dashboard") isActive = true;
-              else if (item.name !== "Dashboard" && item.name !== "My Resumes" && location.pathname.startsWith(item.href)) isActive = true;
+            <nav className="space-y-1">
+              {navItems.map((item) => {
+                let isActive = false;
+                if (item.name === "Dashboard" && location.pathname === "/dashboard") isActive = true;
+                else if (item.name !== "Dashboard" && item.name !== "My Resumes" && location.pathname.startsWith(item.href)) isActive = true;
 
-              if (item.name === "My Resumes") return null;
+                if (item.name === "My Resumes") return null;
 
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer",
-                    isActive 
-                      ? "bg-indigo-50 text-primary font-semibold" 
-                      : "text-slate-600 hover:bg-slate-50 hover:text-navy"
-                  )}
-                >
-                  <item.icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-slate-400")} />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer",
+                      isActive 
+                        ? "bg-indigo-50 text-primary font-semibold" 
+                        : "text-slate-600 hover:bg-slate-50 hover:text-navy"
+                    )}
+                  >
+                    <item.icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-slate-400")} />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
-        <div className="shrink-0 p-4 border-t border-slate-200">
-          <button onClick={signOut} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-navy transition-colors w-full cursor-pointer">
-            <LogOut className="h-4 w-4 text-slate-400" />
-            Sign out
-          </button>
+          <div className="shrink-0 p-4 border-t border-slate-200">
+            <button onClick={signOut} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-navy transition-colors w-full cursor-pointer">
+              <LogOut className="h-4 w-4 text-slate-400" />
+              Sign out
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -169,13 +179,27 @@ export function DashboardLayout() {
       <main className="flex min-w-0 flex-1 flex-col relative h-full">
         {/* Top Header */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 sm:px-6 backdrop-blur-xl z-20 sticky top-0">
-           <div className="flex items-center gap-3">
+           <div className="flex items-center gap-2">
               <button 
                 onClick={() => setIsSidebarOpen(true)} 
                 className="md:hidden p-1.5 -ml-1 text-slate-500 hover:text-navy hover:bg-slate-100 rounded-md transition-colors"
               >
                 <Menu className="h-5 w-5" />
               </button>
+              
+              {/* Desktop sidebar toggle button */}
+              <button
+                onClick={() => setIsSidebarCollapsed(prev => !prev)}
+                className="hidden md:flex p-1.5 -ml-1 text-slate-500 hover:text-navy hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {isSidebarCollapsed ? (
+                  <PanelLeftOpen className="h-5 w-5" />
+                ) : (
+                  <PanelLeftClose className="h-5 w-5" />
+                )}
+              </button>
+
               <h1 className="text-lg font-bold text-navy">{pageTitle}</h1>
            </div>
            

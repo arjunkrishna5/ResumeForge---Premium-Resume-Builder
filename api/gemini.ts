@@ -105,10 +105,46 @@ async function generateWithFallback(prompt: string, jsonMode: boolean = false): 
   throw new Error(`All configured AI providers failed. Last error: ${lastError?.message || lastError}`);
 }
 
+interface RateLimitRecord {
+  count: number;
+  resetTime: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitRecord>();
+
 export default async function handler(
   req: VercelRequest, 
   res: VercelResponse
 ) {
+  // Inject Security Headers
+  res.removeHeader("X-Powered-By");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+
+  // IP-based Rate Limiter (15 req / min)
+  const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const windowMs = 60000;
+  const limit = 15;
+
+  let record = rateLimitMap.get(ip);
+  if (!record || now > record.resetTime) {
+    record = {
+      count: 1,
+      resetTime: now + windowMs
+    };
+    rateLimitMap.set(ip, record);
+  } else {
+    record.count++;
+    if (record.count > limit) {
+      return res.status(429).json({
+        error: "Too many requests. Please wait before trying again."
+      });
+    }
+  }
+
   console.log('gemini called, action:', req.body?.action);
   const hasKeys = !!(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.OPENROUTER_API_KEY);
   console.log('Any API key set:', hasKeys);

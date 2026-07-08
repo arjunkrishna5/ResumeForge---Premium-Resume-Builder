@@ -117,11 +117,58 @@ async function generateWithFallback(prompt: string, jsonMode: boolean = false): 
   throw new Error(`All configured AI providers failed. Last error: ${lastError?.message || lastError}`);
 }
 
+interface RateLimitRecord {
+  count: number;
+  resetTime: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitRecord>();
+
+function rateLimiter(limit: number, windowMs: number) {
+  return (req: any, res: any, next: any) => {
+    const ip = (req.headers['x-forwarded-for'] as string) || req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    
+    let record = rateLimitMap.get(ip);
+    if (!record || now > record.resetTime) {
+      record = {
+        count: 1,
+        resetTime: now + windowMs
+      };
+      rateLimitMap.set(ip, record);
+      return next();
+    }
+    
+    record.count++;
+    if (record.count > limit) {
+      return res.status(429).json({
+        error: "Too many requests. Please wait before trying again."
+      });
+    }
+    
+    next();
+  };
+}
+
+const apiRateLimiter = rateLimiter(15, 60000); // 15 requests per minute
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  const upload = multer();
+  const upload = multer({
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  });
+
+  // Inject Security Headers
+  app.use((req, res, next) => {
+    res.removeHeader("X-Powered-By");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+    next();
+  });
 
   app.use(express.json());
 
@@ -130,7 +177,17 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  app.post("/api/extractText", upload.single('file'), async (req, res) => {
+  app.post("/api/extractText", apiRateLimiter, (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+      if (err) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: "File size exceeds the 5MB limit." });
+        }
+        return res.status(500).json({ error: err.message || "Failed to upload file." });
+      }
+      next();
+    });
+  }, async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file provided" });
@@ -168,7 +225,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/gemini", async (req, res) => {
+  app.post("/api/gemini", apiRateLimiter, async (req, res) => {
     try {
       const { action, ...params } = req.body;
       let result = '';

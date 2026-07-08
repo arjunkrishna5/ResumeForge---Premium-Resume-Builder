@@ -3,8 +3,9 @@ import io
 import json
 import re
 import logging
+import time
 from typing import List, Dict, Any, Optional
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -26,14 +27,41 @@ logger.info(f"OPENROUTER_API_KEY present: {bool(os.getenv('OPENROUTER_API_KEY'))
 
 app = FastAPI(title="ResumeForge API Server")
 
-# Configure CORS (useful for dev and cross-origin calls)
+# Restrict CORS origins (useful for dev and cross-origin calls)
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    os.getenv("FRONTEND_URL", "").strip()
+]
+origins = [o for o in origins if o]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins if origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Simple rolling window rate limiter in memory
+ip_rate_limits = {}  # format: {ip: [timestamp1, timestamp2, ...]}
+
+async def rate_limit_dependency(request: Request):
+    ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    
+    # Clean up older timestamps (older than 60s)
+    if ip in ip_rate_limits:
+        ip_rate_limits[ip] = [t for t in ip_rate_limits[ip] if now - t < 60]
+    else:
+        ip_rate_limits[ip] = []
+        
+    if len(ip_rate_limits[ip]) >= 15:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests. Please wait and try again."
+        )
+    ip_rate_limits[ip].append(now)
 
 @app.middleware("http")
 async def verify_keys_middleware(request: Request, call_next):
@@ -147,7 +175,7 @@ async def generate_with_fallback(prompt: str, json_mode: bool = False) -> str:
     raise Exception(f"All configured AI providers failed. Last error: {str(last_error)}")
 
 @app.post("/api/gemini")
-async def gemini_endpoint(request: Request):
+async def gemini_endpoint(request: Request, _ = Depends(rate_limit_dependency)):
     try:
         body = await request.json()
     except Exception:
@@ -290,7 +318,7 @@ async def gemini_endpoint(request: Request):
         )
 
 @app.post("/api/extractText")
-async def extract_text_endpoint(file: UploadFile = File(...)):
+async def extract_text_endpoint(file: UploadFile = File(...), _ = Depends(rate_limit_dependency)):
     filename = file.filename or ""
     file_type = filename.split(".")[-1].lower() if "." in filename else ""
     
@@ -305,6 +333,11 @@ async def extract_text_endpoint(file: UploadFile = File(...)):
 
     try:
         file_bytes = await file.read()
+        
+        # Enforce 5MB upload size limit on backend
+        if len(file_bytes) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File size exceeds the 5MB limit.")
+            
         extracted_text = ""
 
         if file_type == "pdf":
