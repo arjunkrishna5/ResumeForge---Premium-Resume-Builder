@@ -182,5 +182,25 @@ export const TemplateRenders = {
         </div>
       </div>
     </div>
+  ),
+  latex: () => (
+    <div className="w-full h-full bg-white border border-slate-200 flex flex-col p-3 text-[4px] leading-tight overflow-hidden pointer-events-none font-serif">
+      <div className="text-center mb-2">
+        <div className="font-bold text-[6px] text-slate-900 tracking-wide">Name Surname</div>
+        <div className="text-[3px] text-slate-500 mt-0.5">info@email.com | linkedin.com/in/... | github.com/...</div>
+      </div>
+      <div className="mb-1.5">
+        <div className="font-bold text-[4px] uppercase border-b border-slate-200 pb-0.5 mb-1">Education</div>
+        <div className="flex justify-between font-bold"><span>University Name</span><span>Expected 2027</span></div>
+        <div className="text-[3.5px] text-slate-500">B.Tech in Computer Science</div>
+      </div>
+      <div className="flex-1">
+        <div className="font-bold text-[4px] uppercase border-b border-slate-200 pb-0.5 mb-1">Experience</div>
+        <div className="mb-1">
+          <div className="flex justify-between font-bold"><span>Role | Company</span><span>Date</span></div>
+          <div className="h-[2px] w-[80%] bg-slate-200 mt-0.5"></div>
+        </div>
+      </div>
+    </div>
   )
 };

@@ -210,10 +210,10 @@ export function DashboardPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       whileHover={{ y: -4, shadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
                       transition={{ delay: i * 0.1, duration: 0.2 }}
-                      className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition-all h-[340px]"
+                      className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition-all h-[340px]"
                     >
                       {/* Thumbnail Preview Area */}
-                      <div className="h-[210px] bg-slate-100 flex items-center justify-center p-6 relative overflow-hidden">
+                      <div className="h-[210px] bg-slate-100 flex items-center justify-center p-6 relative overflow-hidden rounded-t-2xl">
                         <div className="w-[124px] h-[175px] bg-white shadow-md border border-slate-200/50 transform-gpu group-hover:scale-105 transition-transform duration-500 overflow-hidden relative">
                             <ModernResumePreview />
                             <div className="absolute inset-0 bg-white/0 group-hover:bg-navy/40 transition-colors duration-300 z-10" />
@@ -239,7 +239,7 @@ export function DashboardPage() {
                       </div>
 
                       {/* Info Area */}
-                      <div className="p-4 flex-1 flex flex-col justify-between border-t border-slate-100 bg-white">
+                      <div className="p-4 flex-1 flex flex-col justify-between border-t border-slate-100 bg-white rounded-b-2xl">
                         <div>
                             <div className="flex justify-between items-start mb-1">
                               <Link to={`/builder/${resume.id}`} className="font-bold text-navy hover:text-primary transition-colors line-clamp-1 pr-2">

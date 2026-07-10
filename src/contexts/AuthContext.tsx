@@ -2,7 +2,7 @@ import { ReactNode, createContext, useEffect, useState } from "react";
 import { 
   User, onAuthStateChanged, signInWithPopup, 
   signInWithEmailAndPassword, createUserWithEmailAndPassword, 
-  signOut as firebaseSignOut, updateProfile 
+  signOut as firebaseSignOut, updateProfile, sendEmailVerification
 } from "firebase/auth";
 import { auth, googleProvider } from "../lib/firebase";
 import { useNavigate } from "react-router-dom";
@@ -44,7 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUpWithEmail = async (name: string, email: string, pass: string) => {
     const res = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(res.user, { displayName: name });
-    setCurrentUser({ ...res.user });
+    
+    // Trigger verification email send
+    try {
+      await sendEmailVerification(res.user);
+    } catch (e) {
+      console.error("Verification email sending failed: ", e);
+    }
+
+    setCurrentUser(auth.currentUser);
     navigate("/dashboard", { state: { newUser: true } });
   };
 

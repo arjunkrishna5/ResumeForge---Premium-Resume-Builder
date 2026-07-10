@@ -343,7 +343,13 @@ export function BuilderPage() {
   };
 
   useEffect(() => {
-    if (!currentUser || currentResumeId) return;
+    if (!currentUser) return;
+
+    if (currentResumeId) {
+      setShowContinuePrompt(false);
+      setLastInProgressResume(null);
+      return;
+    }
     
     const checkLastResume = async () => {
       try {

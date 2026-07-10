@@ -258,6 +258,204 @@ export function ResumeRenderer({ data, template }: { data: ResumeData, template:
     );
   }
 
+  if (template === "latex") {
+    return (
+      <div className="p-[12mm] font-serif text-black bg-white min-h-full leading-normal">
+        <header className="mb-5 text-center">
+          <h1 className="text-3xl font-normal tracking-wide text-black mb-1">{data.name || 'YOUR NAME'}</h1>
+          <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-xs text-slate-700 mt-2 font-serif">
+             {data.email && <span className="hover:underline">{data.email}</span>}
+             {data.phone && <span>| {data.phone}</span>}
+             {data.location && <span>| {data.location}</span>}
+             {data.linkedin && (
+               <>
+                 <span>|</span>
+                 <a 
+                   href={data.linkedin.startsWith("http") ? data.linkedin : `https://${data.linkedin}`}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="hover:underline text-slate-800 font-medium"
+                 >
+                   {data.linkedin.replace(/^https?:\/\/(www\.)?/, '')}
+                 </a>
+               </>
+             )}
+             {data.portfolio && (
+               <>
+                 <span>|</span>
+                 <a 
+                   href={data.portfolio.startsWith("http") ? data.portfolio : `https://${data.portfolio}`}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="hover:underline text-slate-800 font-medium"
+                 >
+                   {data.portfolio.replace(/^https?:\/\/(www\.)?/, '')}
+                 </a>
+               </>
+             )}
+          </div>
+        </header>
+
+        {data.summary && (
+          <section className="mb-4">
+            <p className="text-[13px] leading-relaxed text-justify text-slate-800">{data.summary}</p>
+          </section>
+        )}
+
+        {data.education && data.education.length > 0 && (
+          <section className="mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-0.5 mb-2 font-serif">Education</h3>
+            <div className="space-y-2">
+              {data.education.map(edu => (
+                <div key={edu.id} className="text-[13px] font-serif">
+                  <div className="flex justify-between items-baseline font-bold text-slate-900">
+                    <span>{edu.institution}</span>
+                    <span className="font-normal text-xs text-slate-600">{edu.endYear ? `Expected ${edu.endYear}` : ''}</span>
+                  </div>
+                  <div className="flex justify-between items-baseline italic text-slate-700">
+                    <span>{edu.degree}{edu.field && ` in ${edu.field}`}</span>
+                    <span className="font-normal text-xs text-slate-600">{edu.startYear && `${edu.startYear} - ${edu.endYear}`}</span>
+                  </div>
+                  {(edu.grade || edu.gpa) && (
+                    <div className="text-xs text-slate-600 mt-0.5">
+                      {edu.gpa ? `CGPA/GPA: ${edu.gpa}` : edu.grade ? `Grade/Score: ${edu.grade}` : ''}
+                    </div>
+                  )}
+                  {edu.coursework && (
+                    <div className="text-xs text-slate-600 mt-0.5">
+                      Relevant Coursework: {edu.coursework}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {((data.technicalSkills && data.technicalSkills.length > 0) || (data.softSkills && data.softSkills.length > 0)) && (
+          <section className="mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-0.5 mb-2 font-serif">Technical Skills</h3>
+            <div className="text-[13px] space-y-1 font-serif text-slate-800">
+              {data.technicalSkills && data.technicalSkills.length > 0 && (
+                <div>
+                  <span className="font-bold">Skills: </span>
+                  <span>{data.technicalSkills.join(', ')}</span>
+                </div>
+              )}
+              {data.softSkills && data.softSkills.length > 0 && (
+                <div>
+                  <span className="font-bold">Interpersonal: </span>
+                  <span>{data.softSkills.join(', ')}</span>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {data.experience && data.experience.length > 0 && (
+          <section className="mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-0.5 mb-2 font-serif">Experience</h3>
+            <div className="space-y-3">
+              {data.experience.map(exp => (
+                <div key={exp.id} className="text-[13px] font-serif">
+                  <div className="flex justify-between items-baseline font-bold text-slate-900">
+                    <span>{exp.title}</span>
+                    <span className="font-normal text-xs text-slate-600">{exp.startDate} - {exp.current ? 'Present' : exp.endDate}</span>
+                  </div>
+                  <div className="italic text-slate-700 mb-1">{exp.company}</div>
+                  <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed pl-2 border-l border-slate-200">
+                    {exp.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {data.projects && data.projects.length > 0 && (
+          <section className="mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-0.5 mb-2 font-serif">Projects</h3>
+            <div className="space-y-3">
+              {data.projects.map(proj => (
+                <div key={proj.id} className="text-[13px] font-serif">
+                  <div className="flex justify-between items-baseline font-bold text-slate-900">
+                    <span className="flex items-center gap-2">
+                      {proj.name}
+                      {(proj.liveUrl || proj.githubUrl) && (
+                        <span className="font-normal text-xs text-slate-500 font-sans flex items-center gap-1.5">
+                          {proj.githubUrl && (
+                            <a 
+                              href={proj.githubUrl.startsWith("http") ? proj.githubUrl : `https://${proj.githubUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline text-indigo-600"
+                            >
+                              GitHub
+                            </a>
+                          )}
+                          {proj.liveUrl && (
+                            <a 
+                              href={proj.liveUrl.startsWith("http") ? proj.liveUrl : `https://${proj.liveUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline text-indigo-600"
+                            >
+                              Live Demo
+                            </a>
+                          )}
+                        </span>
+                      )}
+                    </span>
+                    {proj.techStack && proj.techStack.length > 0 && (
+                      <span className="font-normal italic text-xs text-slate-600">{proj.techStack.join(', ')}</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-700 whitespace-pre-wrap mt-1 leading-relaxed pl-2 border-l border-slate-200">
+                    {proj.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {data.certifications && data.certifications.length > 0 && (
+          <section className="mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-0.5 mb-2 font-serif">Certifications</h3>
+            <div className="space-y-2">
+              {data.certifications.map((cert, idx) => (
+                <div key={idx} className="text-[13px] font-serif flex justify-between items-baseline">
+                  <div>
+                    <span className="font-bold text-slate-900">{cert.name}</span>
+                    {cert.issuer && <span className="text-slate-600 font-normal"> — {cert.issuer}</span>}
+                  </div>
+                  <span className="text-xs text-slate-600 font-normal">{cert.date}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {data.achievements && data.achievements.length > 0 && (
+          <section className="mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-0.5 mb-2 font-serif">Extracurriculars & Achievements</h3>
+            <div className="space-y-2">
+              {data.achievements.map((ach, idx) => (
+                <div key={idx} className="text-[13px] font-serif">
+                  <div className="flex justify-between items-baseline">
+                    <span className="font-bold text-slate-900">{ach.title}</span>
+                    <span className="text-xs text-slate-600 font-normal">{ach.date}</span>
+                  </div>
+                  {ach.subtitle && <div className="text-xs italic text-slate-600 mt-0.5">{ach.subtitle}</div>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    );
+  }
+
   if (template === "creative") {
     return (
       <div style={{

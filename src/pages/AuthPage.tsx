@@ -28,10 +28,8 @@ export default function AuthPage() {
         Analytics.userSignedUp('email');
       }
     } catch (err: any) {
-      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError('Incorrect password. Try again.');
-      } else if (err.code === 'auth/user-not-found') {
-        setError('No account found with this email.');
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
+        setError("Incorrect password or this email isn't registered yet. If you don't have an account, click 'Sign up' below.");
       } else if (err.code === 'auth/email-already-in-use') {
         setError('An account with this email already exists. Try logging in.');
       } else if (err.code === 'auth/too-many-requests') {

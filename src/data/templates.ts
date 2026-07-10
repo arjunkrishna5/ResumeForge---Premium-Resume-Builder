@@ -97,5 +97,14 @@ export const templates = [
     renderType: "classic",
     description: "Traditional serif layout with double-rule header. Timeless and ATS-friendly.",
     features: ["Serif typography", "Double-rule header", "ATS optimized"]
+  },
+  {
+    id: "latex",
+    name: "LaTeX Scholar",
+    type: "Academic",
+    score: "99%",
+    renderType: "latex",
+    description: "Classic LaTeX-inspired typesetting with horizontal divider lines and serif typography.",
+    features: ["LaTeX style", "Divider rules", "Serif typography", "Clickable links"]
   }
 ];

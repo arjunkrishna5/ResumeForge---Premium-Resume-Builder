@@ -48,7 +48,7 @@ export function ResumePreviewPage() {
     setDownloadError(null);
     try {
       const canvas = await html2canvas(printArea, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 0.8);
       const pdf = new jsPDF("p", "mm", "a4");
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -62,14 +62,14 @@ export function ResumePreviewPage() {
       let position = 0;
       
       // First page
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, imgHeight, undefined, 'FAST');
       heightLeft -= pdfPageHeight;
       
-      // Add new pages until the content ends
-      while (heightLeft > 0) {
+      // Add new pages until the content ends (with a 5mm tolerance to avoid empty trailing pages from decimal margins)
+      while (heightLeft > 5) {
         position = position - pdfPageHeight;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, imgHeight, undefined, 'FAST');
         heightLeft -= pdfPageHeight;
       }
       

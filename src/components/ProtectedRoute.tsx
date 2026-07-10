@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import { Sparkles } from "lucide-react";
+import { VerifyEmailPage } from "../pages/VerifyEmailPage";
 
 export function ProtectedRoute() {
   const { currentUser, loading } = useContext(AuthContext);
@@ -23,6 +24,11 @@ export function ProtectedRoute() {
 
   if (!currentUser) {
     return <Navigate to="/auth" />;
+  }
+
+  // Lock user on the verification screen if their email is not verified
+  if (!currentUser.emailVerified) {
+    return <VerifyEmailPage />;
   }
 
   return <Outlet />;
