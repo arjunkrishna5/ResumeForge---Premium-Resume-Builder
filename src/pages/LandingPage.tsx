@@ -43,7 +43,7 @@ export function LandingPage() {
         </div>
       </section>
       {/* Features Grid */}
-      <section className="py-24 bg-slate-50">
+      <section id="features" className="py-24 bg-slate-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="font-display text-3xl font-bold tracking-tight text-navy sm:text-4xl mb-4">Everything you need to stand out</h2>
@@ -70,8 +70,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-24 bg-white border-y border-slate-100">
+      {/* How it works / About */}
+      <section id="about" className="py-24 bg-white border-y border-slate-100">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
            <div className="flex flex-col items-center text-center">
               <h2 className="font-display text-3xl font-bold tracking-tight text-navy sm:text-4xl mb-6">Create your resume in minutes, not hours</h2>

@@ -27,6 +27,10 @@
   --color-slate-900: #0f172a;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   @apply font-sans antialiased bg-surface text-navy;
 }
