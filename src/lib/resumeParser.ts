@@ -1,3 +1,32 @@
+import * as pdfjsLib from 'pdfjs-dist';
+import mammoth from 'mammoth';
+
+if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
+}
+
+async function extractPdfTextClient(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+  const pdf = await loadingTask.promise;
+  let fullText = '';
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageItems = textContent.items.map((item: any) => item.str);
+    fullText += pageItems.join(' ') + '\n\n';
+  }
+
+  return fullText;
+}
+
+async function extractDocxTextClient(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value || '';
+}
+
 export async function parseResumeFile(file: File): Promise<any> {
   let text = '';
   const fileType = file.name.split('.').pop()?.toLowerCase();
@@ -6,25 +35,33 @@ export async function parseResumeFile(file: File): Promise<any> {
     throw new Error('Unsupported file type. Please upload a PDF or DOCX file.');
   }
 
-  // Extract text using backend
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  const extractRes = await fetch('/api/extractText', {
-    method: 'POST',
-    body: formData
-  });
-
-  if (!extractRes.ok) {
-     const error = await extractRes.json();
-     throw new Error(error.error || 'Failed to extract text from file');
+  // Attempt client-side text extraction first (Rank 1 Architecture)
+  try {
+    if (fileType === 'pdf') {
+      text = await extractPdfTextClient(file);
+    } else if (fileType === 'docx') {
+      text = await extractDocxTextClient(file);
+    }
+  } catch (clientErr) {
+    console.warn("Client-side extraction failed, trying server endpoint fallback...", clientErr);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const extractRes = await fetch('/api/extractText', {
+        method: 'POST',
+        body: formData
+      });
+      if (extractRes.ok) {
+        const extractedData = await extractRes.json();
+        text = extractedData.text;
+      }
+    } catch (serverErr) {
+      console.error("Server extraction fallback also failed:", serverErr);
+    }
   }
 
-  const extractedData = await extractRes.json();
-  text = extractedData.text;
-
   if (!text || text.trim() === '') {
-    throw new Error('Could not extract any text from the file.');
+    throw new Error('Could not extract text from file. Please ensure the file contains readable text.');
   }
 
   let parsedData: any = null;
