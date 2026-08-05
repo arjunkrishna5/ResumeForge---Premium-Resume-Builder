@@ -61,7 +61,7 @@ export async function parseResumeFile(file: File): Promise<any> {
   }
 
   if (!text || text.trim() === '') {
-    throw new Error('Could not extract text from file. Please ensure the file contains readable text.');
+    throw new Error('Image-based or scanned PDF detected. Digital image PDFs cannot be uploaded directly. Please upload a standard text-based PDF or DOCX file.');
   }
 
   let parsedData: any = null;
