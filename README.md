@@ -75,5 +75,8 @@ Open **`http://localhost:3000`** in your browser.
 - **Firebase Configuration**: See [FIREBASE_SETUP.md](file:///c:/Users/ARJUN%20KRISHNA/Desktop/ResumeForge/FIREBASE_SETUP.md) for database rules and auth configurations.
 - **Production Deployment**: See [DEPLOYMENT.md](file:///c:/Users/ARJUN%20KRISHNA/Desktop/ResumeForge/DEPLOYMENT.md) for deploying to Vercel.
 
+## 🤝 Contributing
+Contributions are welcome! Whether you are fixing a bug, improving UI templates, or adding new features, please read our [Contribution Guidelines](file:///c:/Users/ARJUN%20KRISHNA/Desktop/ResumeForge/CONTRIBUTING.md) to get started.
+
 ## 📄 License
 This project is licensed under the MIT License - see the [MIT License Details](https://opensource.org/licenses/MIT) for more information.
