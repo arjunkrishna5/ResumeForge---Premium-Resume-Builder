@@ -53,6 +53,7 @@ Copy `.env.example` to `.env.local` and configure your API keys (Firebase, Gemin
 ```bash
 cp .env.example .env.local
 ```
+> **Note**: Firebase credentials are optional for local development. If no API keys are configured in `.env.local`, ResumeForge will automatically run in local **Guest Mode** using browser storage.
 
 ### 4. Run Development Servers
 Start the Vite dev server:
@@ -65,21 +66,14 @@ Open `http://localhost:3000` in your browser.
 
 ## 🌿 Branching Strategy
 
-**Never push directly to the `main` branch.** Always work on a dedicated branch created from `main`:
+> ⚠️ **IMPORTANT: Never push directly to the `main` branch.**
 
-1. Sync your local `main` branch with upstream:
+1. Always create your own descriptive branch for your work:
    ```bash
-   git checkout main
-   git pull origin main
+   git checkout -b <your-branch-name>
    ```
-2. Create a new descriptive feature branch:
-   ```bash
-   # For new features
-   git checkout -b feature/skills-categorization
-
-   # For bug fixes
-   git checkout -b fix/pdf-parsing-worker
-   ```
+2. Make your changes, commit them to your branch, and push your branch to GitHub.
+3. Open a **Pull Request (PR)** targeting the `main` branch for review.
 
 ---
 
